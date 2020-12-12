@@ -47,7 +47,7 @@ public:
 	mutex vl;
 	unordered_set <int> view_list;
 										/* ===∞‘¿” ƒ¡≈Ÿ√˜=== */
-	int level;
+	int exp;
 };
 
 /* _____________________________________________TIMER THERAD - NPC AI STRUCT_____________________________________________ */

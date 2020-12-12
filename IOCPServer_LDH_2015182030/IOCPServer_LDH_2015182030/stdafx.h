@@ -11,6 +11,7 @@
 #include <chrono>
 #include <queue>
 #include <atomic>
+#include <vector>
 
 // Lua in C Environment
 extern "C"
