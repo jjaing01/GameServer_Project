@@ -26,3 +26,5 @@ using namespace chrono;
 #include "define.h"
 #include "enum.h"
 #include "struct.h"
+#include "extern.h"
+#include "function.h"

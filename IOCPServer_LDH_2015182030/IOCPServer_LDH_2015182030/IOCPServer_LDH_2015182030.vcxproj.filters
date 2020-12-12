@@ -57,6 +57,12 @@
     <ClInclude Include="struct.h">
       <Filter>헤더 파일\01. User</Filter>
     </ClInclude>
+    <ClInclude Include="extern.h">
+      <Filter>헤더 파일\01. User</Filter>
+    </ClInclude>
+    <ClInclude Include="function.h">
+      <Filter>헤더 파일\01. User</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp">

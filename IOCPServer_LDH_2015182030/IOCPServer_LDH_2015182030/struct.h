@@ -44,3 +44,16 @@ public:
 	mutex vl;
 	unordered_set <int> view_list;
 };
+
+/* _____________________________________________TIMER THERAD - NPC AI STRUCT_____________________________________________ */
+struct event_type 
+{
+	int obj_id;
+	system_clock::time_point wakeup_time;
+	int event_id;
+	int target_id;
+	constexpr bool operator < (const event_type& _Left) const
+	{
+		return (wakeup_time > _Left.wakeup_time);
+	}
+};
