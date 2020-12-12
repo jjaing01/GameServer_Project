@@ -1,5 +1,7 @@
 #pragma once
-#define CHECKING
+
+#define NPC
+
 /* SYSTEM HEADER */
 #include <iostream>
 #include <WS2tcpip.h>
@@ -39,4 +41,6 @@ using namespace chrono;
 #include "extern.h"
 #include "function.h"
 
+#include "serverFunc.h"
 #include "PacketMgr.h"
+#include "npc.h"

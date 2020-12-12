@@ -11,8 +11,8 @@ using namespace chrono;
 
 sf::TcpSocket g_socket;
 
-constexpr auto SCREEN_WIDTH = 19;
-constexpr auto SCREEN_HEIGHT = 19;
+constexpr auto SCREEN_WIDTH = 20;
+constexpr auto SCREEN_HEIGHT = 20;
 
 constexpr auto TILE_WIDTH = 65;
 constexpr auto WINDOW_WIDTH = TILE_WIDTH * SCREEN_WIDTH / 2 + 10;   // size of window

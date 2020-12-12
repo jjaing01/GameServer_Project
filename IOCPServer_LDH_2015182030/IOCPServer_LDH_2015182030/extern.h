@@ -7,11 +7,8 @@ extern OVER_EX g_accept_over;
 /* ID LOCK */
 extern mutex g_id_lock;
 
-/* NPC 객체 자료구조 */
-extern obj_info g_npcs[NUM_NPC];
-
 /* CLIENT(USER) 객체 자료구조 */
-extern client_info g_clients[MAX_USER];
+extern client_info g_clients[MAX_USER + NUM_NPC];
 
 /* Timer Queue */
 extern priority_queue<event_type> g_timer_queue;

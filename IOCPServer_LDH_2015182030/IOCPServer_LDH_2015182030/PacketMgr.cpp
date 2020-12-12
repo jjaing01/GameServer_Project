@@ -1,14 +1,14 @@
 #include "stdafx.h"
 #include "PacketMgr.h"
-#include "serverFunc.h"
 
 void send_packet(int id, void* p)
 {
 	unsigned char* packet = reinterpret_cast<unsigned char*>(p);
 
 	OVER_EX* send_over = new OVER_EX;
+
 	memcpy(send_over->iocp_buf, packet, packet[0]);
-	send_over->op_mode = OP_MODE_SEND;
+	send_over->op_mode = OPMODE::OP_MODE_SEND;
 	send_over->wsa_buf.buf = reinterpret_cast<CHAR*>(send_over->iocp_buf);
 	send_over->wsa_buf.len = packet[0];
 	ZeroMemory(&send_over->wsa_over, sizeof(send_over->wsa_over));
@@ -141,14 +141,14 @@ void process_move(int id, char dir)
 #endif // NPC
 
 	/* [시야에 들어온 객체 처리] */
-	for (int ob : new_viewlist)											
+	for (int ob : new_viewlist)
 	{
 		// <시야에 새로 들어왔을 경우>
-		if (0 == old_viewlist.count(ob))								
+		if (0 == old_viewlist.count(ob))
 		{
 			g_clients[id].view_list.insert(ob);
 			send_enter_packet(id, ob);
-																		// <NPC처리>
+			// <NPC처리>
 			if (false == is_npc(ob))									// NPC가 아닌 다른 유저일 경우에는 패킷 Send!
 			{
 				if (0 == g_clients[ob].view_list.count(id))
@@ -162,13 +162,13 @@ void process_move(int id, char dir)
 					send_move_packet(ob, id);
 			}
 		}
-		// <이전에도 시야에 있었고, 이동후에도 시야에 있는 객체>
-		else  
+		// <이전에도 시야에 있었고, 이동 후에도 시야에 있는 객체>
+		else
 		{
 			if (false == is_npc(ob))
 			{
 				if (0 != g_clients[ob].view_list.count(id))
-					send_move_packet(ob, id);				
+					send_move_packet(ob, id);
 				else
 				{
 					g_clients[ob].vl.lock();
@@ -205,7 +205,7 @@ void process_move(int id, char dir)
 			}
 		}
 	}
-	
+
 #ifdef NPC
 	/* NPC AI - lua */
 	if (false == is_npc(id))
@@ -216,8 +216,8 @@ void process_move(int id, char dir)
 
 			OVER_EX* ex_over = new OVER_EX;
 			ex_over->object_id = id;
-			ex_over->op_mode = OP_PLAYER_MOVE_NOTIFY;
-			PostQueuedCompletionStatus(h_iocp, 1, npc, &ex_over->wsa_over);
+			ex_over->op_mode = OPMODE::OP_PLAYER_MOVE_NOTIFY;
+			PostQueuedCompletionStatus(g_hIocp, 1, npc, &ex_over->wsa_over);
 		}
 	}
 #endif // NPC
@@ -268,7 +268,7 @@ void process_packet(int id)
 			/* 근처에 있나 확인 */
 			if (false == is_near(id, j)) continue;
 			g_clients[id].view_list.insert(j);
-			send_enter_packet(id, j); // NPC에게 엔터패킷을 줄 필요도 없고, NPC는 뷰리스트를 가질 필요도 없다.
+			send_enter_packet(id, j);								// NPC에게 엔터패킷을 줄 필요도 없고, NPC는 뷰리스트를 가질 필요도 없다.
 		}
 #endif // NPC
 		break;

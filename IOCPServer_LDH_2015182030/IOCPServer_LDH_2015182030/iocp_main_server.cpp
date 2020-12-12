@@ -7,8 +7,7 @@ OVER_EX g_accept_over;
 
 /* OBJECT 관련 변수 */
 mutex g_id_lock;
-obj_info g_npcs[NUM_NPC];
-client_info g_clients[MAX_USER];
+client_info g_clients[MAX_USER + NUM_NPC];
 
 /* TIMER 관련 변수 */
 priority_queue<event_type> g_timer_queue;
@@ -29,6 +28,8 @@ void worker_thread();				// Worker Thread Enter Function
 int main()
 {
 	Ready_Server();
+
+	initialize_NPC();
 
 	/* Time Thread 생성 */
 	thread time_thread{ time_worker };
@@ -54,7 +55,7 @@ int main()
 void Init_obj()
 {
 	memset(&g_clients, 0, sizeof(g_clients));
-	memset(&g_npcs, 0, sizeof(g_npcs));
+	memset(&g_clients, 0, sizeof(g_clients));
 }
 void Ready_Server()
 {
@@ -130,7 +131,7 @@ void add_new_client(SOCKET ns)
 		g_clients[i].c_lock.unlock();
 
 		g_clients[i].m_packet_start = g_clients[i].m_recv_over.iocp_buf;
-		g_clients[i].m_recv_over.op_mode = OP_MODE_RECV;
+		g_clients[i].m_recv_over.op_mode = OPMODE::OP_MODE_RECV;
 		g_clients[i].m_recv_over.wsa_buf.buf = reinterpret_cast<CHAR*>(g_clients[i].m_recv_over.iocp_buf);
 		g_clients[i].m_recv_over.wsa_buf.len = sizeof(g_clients[i].m_recv_over.iocp_buf);
 		ZeroMemory(&g_clients[i].m_recv_over.wsa_over, sizeof(g_clients[i].m_recv_over.wsa_over));
@@ -228,8 +229,14 @@ void time_worker()
 
 			switch (ev.event_id)
 			{
-			case 0:
-				break;
+			case OPMODE::OP_RANDOM_MOVE:
+			{
+				OVER_EX* over = new OVER_EX;
+				over->op_mode = ev.event_id;
+				PostQueuedCompletionStatus(g_hIocp, 1, ev.obj_id, &over->wsa_over);
+			}
+			break;
+
 			default:
 				break;
 			}
@@ -261,7 +268,7 @@ void worker_thread()
 		if (ret == FALSE)
 			error_display("GQCS Error : ", WSAGetLastError());
 
-		/* I/O 처리 작업 */
+		/* <I/O 처리 작업> */
 		OVER_EX* over_ex = reinterpret_cast<OVER_EX*>(lpover);
 
 		switch (over_ex->op_mode)
@@ -286,6 +293,43 @@ void worker_thread()
 
 		case OPMODE::OP_MODE_SEND:
 			delete over_ex;
+			break;
+
+		case OPMODE::OP_RANDOM_MOVE:
+		{
+			random_move_npc(key);
+
+			bool alive = false;
+			for (int i = 0; i < MAX_USER; ++i)
+			{
+				if (true == is_near(key, i))
+				{
+					if (ST_ACTIVE == g_clients[i].m_status)
+					{
+						alive = true;
+						break;
+					}
+				}
+			}
+
+			if (true == alive) add_timer(key, OP_RANDOM_MOVE, system_clock::now() + 1s);
+			else g_clients[key].m_status = ST_STOP;
+
+			if (over_ex != nullptr)
+				delete over_ex;
+		}
+			break;
+
+		case OPMODE::OP_PLAYER_MOVE_NOTIFY:
+		{
+			/* Key NPC(monster)에게 해당 루아 함수를 넘겨준다. */
+			lua_getglobal(g_clients[key].L, "event_player_move");
+			lua_pushnumber(g_clients[key].L, over_ex->object_id);
+			lua_pcall(g_clients[key].L, 1, 1, 0);
+
+			if (over_ex != nullptr)
+				delete over_ex;
+		}
 			break;
 
 		default:

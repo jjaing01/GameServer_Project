@@ -92,6 +92,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -120,6 +121,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp" />
+    <ClCompile Include="npc.cpp" />
     <ClCompile Include="PacketMgr.cpp" />
     <ClCompile Include="serverFunc.cpp" />
   </ItemGroup>
@@ -153,11 +156,18 @@
     <ClInclude Include="include\lua.hpp" />
     <ClInclude Include="include\luaconf.h" />
     <ClInclude Include="include\lualib.h" />
+    <ClInclude Include="npc.h" />
     <ClInclude Include="PacketMgr.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="serverFunc.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="struct.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lua54.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="monster.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

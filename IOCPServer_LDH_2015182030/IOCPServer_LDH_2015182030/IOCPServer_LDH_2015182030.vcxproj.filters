@@ -31,6 +31,9 @@
     <Filter Include="소스 파일\02.serverFunc">
       <UniqueIdentifier>{a655df77-a20e-47a6-a543-ca98f9dd73bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\03.NPC">
+      <UniqueIdentifier>{3abb0a86-4ad3-4492-8694-fe10bae9c9db}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h">
@@ -75,6 +78,9 @@
     <ClInclude Include="serverFunc.h">
       <Filter>소스 파일\02.serverFunc</Filter>
     </ClInclude>
+    <ClInclude Include="npc.h">
+      <Filter>소스 파일\03.NPC</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp">
@@ -86,5 +92,18 @@
     <ClCompile Include="serverFunc.cpp">
       <Filter>소스 파일\02.serverFunc</Filter>
     </ClCompile>
+    <ClCompile Include="npc.cpp">
+      <Filter>소스 파일\03.NPC</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lua54.lib">
+      <Filter>리소스 파일</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="monster.lua">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
