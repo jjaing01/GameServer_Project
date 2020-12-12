@@ -7,7 +7,7 @@
 using namespace std;
 using namespace chrono;
 
-#include "..\..\2020_IOCP_SERVER\2020_IOCP_SERVER\protocol.h"
+#include "..\..\IOCPServer_LDH_2015182030\IOCPServer_LDH_2015182030\protocol.h"
 
 sf::TcpSocket g_socket;
 

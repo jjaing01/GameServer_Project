@@ -1,6 +1,6 @@
 #pragma once
 
-void error_display(const char* msg, int err_no)
+inline void error_display(const char* msg, int err_no)
 {
 	WCHAR* lpMsgBuf;
 	FormatMessage(

@@ -19,6 +19,7 @@ void Init_obj();					// 클라이언트 객체 & NPC 객체 자료구조 초기화
 void Ready_Server();				// 서버 메인 루프 초기화
 
 void add_new_client(SOCKET ns);		// 새로운 유저 접속 함수
+void disconnect_client(int id);		// 유저 접속 정료 함수
 
 void time_worker();					// Timer Thread Enter Function
 void worker_thread();				// Worker Thread Enter Function
@@ -153,7 +154,7 @@ void add_new_client(SOCKET ns)
 		{
 			ret = WSARecv(g_clients[i].m_sock, &g_clients[i].m_recv_over.wsa_buf, 1, NULL, &flags, &g_clients[i].m_recv_over.wsa_over, NULL);
 		}
-		g_clients[i].c_lock.lock();
+		g_clients[i].c_lock.unlock();
 
 		if (SOCKET_ERROR == ret) 
 		{
@@ -169,6 +170,31 @@ void add_new_client(SOCKET ns)
 	g_accept_over.wsa_buf.len = static_cast<ULONG> (cSocket);
 	ZeroMemory(&g_accept_over.wsa_over, sizeof(&g_accept_over.wsa_over));
 	AcceptEx(g_hListenSock, cSocket, g_accept_over.iocp_buf, 0, 32, 32, NULL, &g_accept_over.wsa_over);
+}
+
+void disconnect_client(int id)
+{
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (true == g_clients[i].in_use)
+			if (i != id)
+			{
+				if (0 != g_clients[i].view_list.count(id))
+				{
+					g_clients[i].vl.lock();
+					g_clients[i].view_list.erase(id);
+					g_clients[i].vl.unlock();
+					send_leave_packet(i, id);
+				}
+			}
+	}
+
+	g_clients[id].c_lock.lock();
+	g_clients[id].in_use = false;
+	g_clients[id].view_list.clear();
+	closesocket(g_clients[id].m_sock);
+	g_clients[id].m_sock = 0;
+	g_clients[id].c_lock.unlock();
 }
 
 void time_worker()
@@ -202,6 +228,8 @@ void time_worker()
 
 			switch (ev.event_id)
 			{
+			case 0:
+				break;
 			default:
 				break;
 			}
@@ -217,7 +245,6 @@ void worker_thread()
 
 	while (true)
 	{
-	
 		DWORD io_size;				// 받은 I/O 크기
 		int key;					// 보낸이의 KEY
 		ULONG_PTR iocp_key;			// 보낸이의 KEY
@@ -225,6 +252,7 @@ void worker_thread()
 
 		/* GQCS => I/O 꺼내기 */
 		int ret = GetQueuedCompletionStatus(g_hIocp, &io_size, &iocp_key, &lpover, INFINITE);
+		key = static_cast<int>(iocp_key);
 
 #ifdef CHECKING
 		cout << "Completion Detected" << endl;
@@ -243,9 +271,21 @@ void worker_thread()
 			break;
 
 		case OPMODE::OP_MODE_RECV:
+			if (0 == io_size)
+				disconnect_client(key);
+			else
+			{
+#ifdef CHECKING
+				cout << "Packet from Client [" << key << "]" << endl;
+#endif // CHECKING
+				
+				/* Packet 재조립 */
+				process_recv(key, io_size);
+			}
 			break;
 
 		case OPMODE::OP_MODE_SEND:
+			delete over_ex;
 			break;
 
 		default:

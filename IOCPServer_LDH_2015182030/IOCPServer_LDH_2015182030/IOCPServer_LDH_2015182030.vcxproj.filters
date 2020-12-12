@@ -25,6 +25,12 @@
     <Filter Include="헤더 파일\02. Lua">
       <UniqueIdentifier>{20bf3e0c-c595-4fcd-90fb-8bc360d2866f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\01.PacketMgr">
+      <UniqueIdentifier>{613c0c74-d555-4e22-8440-915f40811ba6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\02.serverFunc">
+      <UniqueIdentifier>{a655df77-a20e-47a6-a543-ca98f9dd73bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h">
@@ -63,10 +69,22 @@
     <ClInclude Include="function.h">
       <Filter>헤더 파일\01. User</Filter>
     </ClInclude>
+    <ClInclude Include="PacketMgr.h">
+      <Filter>소스 파일\01.PacketMgr</Filter>
+    </ClInclude>
+    <ClInclude Include="serverFunc.h">
+      <Filter>소스 파일\02.serverFunc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp">
       <Filter>소스 파일\00.MainServer</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketMgr.cpp">
+      <Filter>소스 파일\01.PacketMgr</Filter>
+    </ClCompile>
+    <ClCompile Include="serverFunc.cpp">
+      <Filter>소스 파일\02.serverFunc</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -14,12 +14,12 @@ constexpr int NUM_NPC = 2000;
 
 #pragma pack (push, 1)
 
-constexpr char SC_PACKET_LOGIN_OK	= 0;
-constexpr char SC_PACKET_MOVE		= 1;
-constexpr char SC_PACKET_ENTER		= 2;
-constexpr char SC_PACKET_LEAVE		= 3;
-constexpr char SC_PACKET_CHAT		= 4;
-constexpr char SC_PACKET_LOGIN_FAIL	= 5;
+constexpr char SC_PACKET_LOGIN_OK		= 0;
+constexpr char SC_PACKET_MOVE			= 1;
+constexpr char SC_PACKET_ENTER			= 2;
+constexpr char SC_PACKET_LEAVE			= 3;
+constexpr char SC_PACKET_CHAT			= 4;
+constexpr char SC_PACKET_LOGIN_FAIL		= 5;
 constexpr char SC_PACKET_STAT_CHANGE	= 6;
 
 constexpr char CS_LOGIN		= 0;

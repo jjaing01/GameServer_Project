@@ -140,6 +140,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp" />
+    <ClCompile Include="PacketMgr.cpp" />
+    <ClCompile Include="serverFunc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="define.h" />
@@ -151,7 +153,9 @@
     <ClInclude Include="include\lua.hpp" />
     <ClInclude Include="include\luaconf.h" />
     <ClInclude Include="include\lualib.h" />
+    <ClInclude Include="PacketMgr.h" />
     <ClInclude Include="protocol.h" />
+    <ClInclude Include="serverFunc.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="struct.h" />
   </ItemGroup>
