@@ -12,6 +12,15 @@
 #include <queue>
 #include <atomic>
 
+// Lua in C Environment
+extern "C"
+{
+#include "include/lua.h"
+#include "include/lauxlib.h"
+#include "include/lualib.h"
+}
+
+
 /* NAMESPACE */
 using namespace std;
 using namespace chrono;
