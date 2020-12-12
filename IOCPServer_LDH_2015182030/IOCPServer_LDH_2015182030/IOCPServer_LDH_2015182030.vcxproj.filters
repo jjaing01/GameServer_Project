@@ -13,27 +13,54 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="소스 파일\MainServer">
-      <UniqueIdentifier>{b944afc9-a5aa-4b1e-8026-e8a6c5c21de4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\01.User">
-      <UniqueIdentifier>{0b5880a4-e839-482a-8cb6-04fbf00155b2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="헤더 파일\00. System">
       <UniqueIdentifier>{ab60d73b-ef54-41b9-8096-f4837d0f3423}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\01. User">
+      <UniqueIdentifier>{0b5880a4-e839-482a-8cb6-04fbf00155b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\00.MainServer">
+      <UniqueIdentifier>{b944afc9-a5aa-4b1e-8026-e8a6c5c21de4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\02. Lua">
+      <UniqueIdentifier>{20bf3e0c-c595-4fcd-90fb-8bc360d2866f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h">
-      <Filter>헤더 파일\01.User</Filter>
+      <Filter>헤더 파일\01. User</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>헤더 파일\00. System</Filter>
     </ClInclude>
+    <ClInclude Include="define.h">
+      <Filter>헤더 파일\01. User</Filter>
+    </ClInclude>
+    <ClInclude Include="enum.h">
+      <Filter>헤더 파일\01. User</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lauxlib.h">
+      <Filter>헤더 파일\02. Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.h">
+      <Filter>헤더 파일\02. Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.hpp">
+      <Filter>헤더 파일\02. Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\luaconf.h">
+      <Filter>헤더 파일\02. Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lualib.h">
+      <Filter>헤더 파일\02. Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="struct.h">
+      <Filter>헤더 파일\01. User</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp">
-      <Filter>소스 파일\MainServer</Filter>
+      <Filter>소스 파일\00.MainServer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -12,9 +12,6 @@
 #include <queue>
 #include <atomic>
 
-/* USER HEADER */
-#include "protocol.h"
-
 /* NAMESPACE */
 using namespace std;
 using namespace chrono;
@@ -23,3 +20,9 @@ using namespace chrono;
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
 #pragma comment(lib, "lua54.lib")
+
+/* USER HEADER */
+#include "protocol.h"
+#include "define.h"
+#include "enum.h"
+#include "struct.h"
