@@ -8,7 +8,7 @@ using namespace std;
 using namespace chrono;
 
 #include "..\..\IOCPServer_LDH_2015182030\IOCPServer_LDH_2015182030\protocol.h"
-
+#define ADD
 sf::TcpSocket g_socket;
 
 constexpr auto SCREEN_WIDTH = 20;
@@ -29,6 +29,10 @@ int g_myid;
 sf::RenderWindow* g_window;
 sf::Font g_font;
 
+#ifdef ADD
+string chatting;
+#endif // ADD
+
 class OBJECT {
 private:
 	bool m_showing;
@@ -41,6 +45,9 @@ private:
 
 public:
 	int m_x, m_y;
+	short hp = 100;
+	short level = 1;
+	int exp = 0;
 	char name[MAX_ID_LEN];
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
@@ -81,7 +88,9 @@ public:
 		g_window->draw(m_sprite);
 		m_name.setPosition(rx - 10, ry - 10);
 		g_window->draw(m_name);
-		if (high_resolution_clock::now() < m_time_out) {
+		if (high_resolution_clock::now() < m_time_out) 
+		{
+			m_text.setCharacterSize(35); // term project
 			m_text.setPosition(rx - 10, ry + 20);
 			g_window->draw(m_text);
 		}
@@ -90,11 +99,14 @@ public:
 		m_name.setFont(g_font);
 		m_name.setString(str);
 		m_name.setFillColor(sf::Color(255, 255, 0));
+		m_name.setOutlineThickness(2); // ±½±â
+		m_name.setOutlineColor(sf::Color::Black); // À±°û¼±
 		m_name.setStyle(sf::Text::Bold);
 	}
 	void add_chat(char chat[]) {
 		m_text.setFont(g_font);
 		m_text.setString(chat);
+		cout << chat << endl;//
 		m_time_out = high_resolution_clock::now() + 1s;
 	}
 };
@@ -160,8 +172,11 @@ void ProcessPacket(char* ptr)
 		else {
 			if (id < NPC_ID_START)
 				npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };
-			else
+			else if (id < NPC_ID_START + NUM_NPC / 2)
 				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };
+			else
+				npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // ¸»
+
 			strcpy_s(npcs[id].name, my_packet->name);
 			npcs[id].set_name(my_packet->name);
 			npcs[id].move(my_packet->x, my_packet->y);
@@ -206,9 +221,19 @@ void ProcessPacket(char* ptr)
 		npcs[my_packet->id].add_chat(my_packet->message);
 	}
 	break;
+#ifdef ADD
+	case SC_PACKET_STAT_CHANGE:
+	{
+		sc_packet_stat_change* my_packet = reinterpret_cast<sc_packet_stat_change*>(ptr);
+		avatar.level = my_packet->level;
+		avatar.exp = my_packet->exp;
+		avatar.hp = my_packet->hp;
+		break;
+	}
+#endif // ADD
 	default:
 		printf("Unknown PACKET type [%d]\n", ptr[1]);
-
+		break;
 	}
 }
 
@@ -281,6 +306,8 @@ void client_main()
 	avatar.draw();
 	//	for (auto &pl : players) pl.draw();
 	for (auto& npc : npcs) npc.second.draw();
+	
+	/* À§Ä¡ ÁÂÇ¥ */
 	sf::Text text;
 	text.setFont(g_font);
 	char buf[100];
@@ -288,6 +315,49 @@ void client_main()
 	text.setString(buf);
 	g_window->draw(text);
 
+#ifdef ADD
+	/* ·¹º§ & °æÇèÄ¡ */
+	sf::Text level;
+	level.setFont(g_font);
+	//char buf[40];
+	sprintf_s(buf, "Level:%d / Exp:%d", avatar.level, avatar.exp);
+	level.setString(buf);
+	level.setCharacterSize(50);
+	level.setOutlineThickness(5);
+	level.setOutlineColor(sf::Color::Black);
+	g_window->draw(level);
+
+	/* HP */
+	sf::Text HpPos;
+	HpPos.setFont(g_font);
+	sprintf_s(buf, "Hp:%d / Pos:(%d, %d)", avatar.hp, avatar.m_x, avatar.m_y);
+	HpPos.setString(buf);
+	HpPos.setFillColor(sf::Color::Green);
+	HpPos.setOutlineThickness(5);
+	HpPos.setOutlineColor(sf::Color::Black);
+	HpPos.setCharacterSize(50);
+	HpPos.setPosition(0, 1250);
+	g_window->draw(HpPos);
+
+	/* chatting box */
+	sf::RectangleShape chat;
+	chat.setPosition(800, 1000);
+	chat.setSize(sf::Vector2f(500, 300));
+	chat.setFillColor(sf::Color(0, 0, 0, 200));
+	g_window->draw(chat);
+
+	sf::RectangleShape chat2;
+	chat2.setPosition(800, 1250);
+	chat2.setSize(sf::Vector2f(500, 40));
+	chat2.setFillColor(sf::Color(200, 200, 200, 200));
+	g_window->draw(chat2);
+
+	sf::Text Chatting;
+	Chatting.setFont(g_font);
+	Chatting.setString(chatting);
+	Chatting.setPosition(810, 1250);
+	g_window->draw(Chatting);
+#endif // ADD
 }
 
 void send_packet(void* packet)
@@ -360,11 +430,39 @@ int main()
 				case sf::Keyboard::Down:
 					send_move_packet(MV_DOWN);
 					break;
+#ifdef ADD
+				/*case sf::Keyboard::Space:
+					send_attack_packet();
+					break;
+				case sf::Keyboard::Enter: {
+					send_chat_packet(chatting.c_str());
+					chatting.clear();*/
+#endif // ADD
+		
 				case sf::Keyboard::Escape:
 					window.close();
 					break;
 				}
 			}
+#ifdef ADD
+			if (event.type == sf::Event::TextEntered)
+			{
+				if (event.KeyPressed == sf::Keyboard::BackSpace && chatting.size() != 0)
+				{
+					chatting.pop_back();
+					std::cout << chatting << std::endl;
+				}
+				else if (event.text.unicode < 128) {
+					chatting.push_back((char)event.text.unicode);
+					std::cout << chatting << std::endl;
+				}
+				/*else if (event.KeyPressed == sf::Keyboard::Enter) {
+
+					std::cout << "Clear!" << std::endl;
+				}*/
+			}
+#endif // ADD
+		
 		}
 
 		window.clear();

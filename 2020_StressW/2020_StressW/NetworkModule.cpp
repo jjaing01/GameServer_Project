@@ -27,7 +27,7 @@ const static int MAX_BUFF_SIZE = 255;
 
 #pragma comment (lib, "ws2_32.lib")
 
-#include "..\..\2020_IOCP_SERVER\2020_IOCP_SERVER\protocol.h"
+#include "..\..\IOCPServer_LDH_2015182030\IOCPServer_LDH_2015182030\protocol.h"
 
 HANDLE g_hiocp;
 
