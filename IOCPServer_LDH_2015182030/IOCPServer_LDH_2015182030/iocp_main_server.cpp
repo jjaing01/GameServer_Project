@@ -323,9 +323,11 @@ void worker_thread()
 		case OPMODE::OP_PLAYER_MOVE_NOTIFY:
 		{
 			/* Key NPC(monster)에게 해당 루아 함수를 넘겨준다. */
+			g_clients[key].Lua_l.lock();
 			lua_getglobal(g_clients[key].L, "event_player_move");
 			lua_pushnumber(g_clients[key].L, over_ex->object_id);
 			lua_pcall(g_clients[key].L, 1, 1, 0);
+			g_clients[key].Lua_l.unlock();
 
 			if (over_ex != nullptr)
 				delete over_ex;

@@ -35,6 +35,7 @@ struct client_info
 	atomic<STATUS> m_status;
 
 	lua_State* L;
+	mutex Lua_l;
 };
 
 /* _____________________________________________TIMER THERAD - NPC AI STRUCT_____________________________________________ */
