@@ -77,7 +77,11 @@ void wake_up_npc(int id)
 		else if (g_clients[id].type == TYPE_BOSS)
 		{
 			add_timer(id, OP_BOSS_MOVE, system_clock::now() + 1s);
-		}		
+		}	
+		else if (g_clients[id].type == TYPE_NORMAL)
+		{
+			add_timer(id, OP_RANDOM_MOVE, system_clock::now() + 1s);
+		}
 	}
 }
 

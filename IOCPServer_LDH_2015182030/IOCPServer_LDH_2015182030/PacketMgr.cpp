@@ -89,6 +89,21 @@ void send_leave_packet(int to_client, int new_id)
 	send_packet(to_client, &p);
 }
 
+void send_stat_change_packet(int id)
+{
+	sc_packet_stat_change p;
+
+	p.size = sizeof(p);
+	p.type = SC_PACKET_STAT_CHANGE;
+
+	p.id = id;
+	p.level = g_clients[id].lev;
+	p.exp = g_clients[id].exp;
+	p.hp = g_clients[id].hp;
+	
+	send_packet(id, &p);
+}
+
 void process_move(int id, char dir)
 {
 	short x = g_clients[id].x;
@@ -223,6 +238,48 @@ void process_move(int id, char dir)
 #endif // NPC
 }
 
+void process_attck(int id)
+{
+	short x = g_clients[id].x;
+	short y = g_clients[id].y;
+
+	/* 현재 유저의 공격 리스트 */
+	unordered_set <int> new_attcklist;
+	for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
+	{
+		if (true == is_attack(id, i)) new_attcklist.insert(i);
+	}
+
+	/* 공격 리스트 내의 NPC들 공격 */
+	for (auto& monster : new_attcklist)
+	{
+		/* MONSTER HP 깎기 */
+		g_clients[monster].hp -= g_clients[id].att;
+
+		/* Monster DEAD */
+		if (g_clients[monster].hp <= ZERO_HP && g_clients[monster].m_status == ST_ACTIVE)
+		{	
+			/* MONSTER DIE */
+			STATUS prev_state = ST_ACTIVE;
+			if (true == atomic_compare_exchange_strong(&g_clients[monster].m_status, &prev_state, ST_STOP))
+				add_timer(monster, OP_MONSTER_DIE, system_clock::now() + 30s);
+
+			/* PLAYER EXP 획득 */
+			g_clients[id].exp += g_clients[monster].exp;
+
+			/* PLAYER LEVEL UP 가능 여부 */
+			int isUP = g_clients[id].exp;
+			if (isUP >= LEVEL_UP_EXP)
+			{
+				++g_clients[id].lev;
+				g_clients[id].exp = 0;
+			}
+		}
+	}
+
+	send_stat_change_packet(id);
+}
+
 void process_packet(int id)
 {
 	char p_type = g_clients[id].m_packet_start[1];
@@ -283,6 +340,10 @@ void process_packet(int id)
 	}
 
 	case CS_ATTACK:
+	{
+		cs_packet_attack* p = reinterpret_cast<cs_packet_attack*>(g_clients[id].m_packet_start);
+		process_attck(id);
+	}
 		break;
 	case CS_CHAT:
 		break;

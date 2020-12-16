@@ -388,6 +388,14 @@ void send_move_packet(unsigned char dir)
 	send_packet(&m_packet);
 }
 
+void send_attack_packet()
+{
+	cs_packet_attack m_packet;
+	m_packet.size = sizeof(m_packet);
+	m_packet.type = CS_ATTACK;
+	send_packet(&m_packet);
+}
+
 
 int main()
 {
@@ -442,9 +450,10 @@ int main()
 					send_move_packet(MV_DOWN);
 					break;
 #ifdef ADD
-				/*case sf::Keyboard::Space:
+				case sf::Keyboard::Space:
 					send_attack_packet();
 					break;
+				/*
 				case sf::Keyboard::Enter: {
 					send_chat_packet(chatting.c_str());
 					chatting.clear();*/
@@ -456,22 +465,22 @@ int main()
 				}
 			}
 #ifdef ADD
-			if (event.type == sf::Event::TextEntered)
-			{
-				if (event.KeyPressed == sf::Keyboard::BackSpace && chatting.size() != 0)
-				{
-					chatting.pop_back();
-					std::cout << chatting << std::endl;
-				}
-				else if (event.text.unicode < 128) {
-					chatting.push_back((char)event.text.unicode);
-					std::cout << chatting << std::endl;
-				}
-				/*else if (event.KeyPressed == sf::Keyboard::Enter) {
+			//if (event.type == sf::Event::TextEntered)
+			//{
+			//	if (event.KeyPressed == sf::Keyboard::BackSpace && chatting.size() != 0)
+			//	{
+			//		chatting.pop_back();
+			//		std::cout << chatting << std::endl;
+			//	}
+			//	else if (event.text.unicode < 128) {
+			//		chatting.push_back((char)event.text.unicode);
+			//		std::cout << chatting << std::endl;
+			//	}
+			//	/*else if (event.KeyPressed == sf::Keyboard::Enter) {
 
-					std::cout << "Clear!" << std::endl;
-				}*/
-			}
+			//		std::cout << "Clear!" << std::endl;
+			//	}*/
+			//}
 #endif // ADD
 		
 		}
