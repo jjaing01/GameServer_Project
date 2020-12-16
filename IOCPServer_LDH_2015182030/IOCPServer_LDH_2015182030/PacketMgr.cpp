@@ -89,7 +89,7 @@ void send_leave_packet(int to_client, int new_id)
 	send_packet(to_client, &p);
 }
 
-void send_stat_change_packet(int id)
+void send_stat_change_packet(int to, int id)
 {
 	sc_packet_stat_change p;
 
@@ -101,7 +101,7 @@ void send_stat_change_packet(int id)
 	p.exp = g_clients[id].exp;
 	p.hp = g_clients[id].hp;
 	
-	send_packet(id, &p);
+	send_packet(to, &p);
 }
 
 void process_move(int id, char dir)
@@ -258,6 +258,9 @@ void process_attck(int id)
 		{	
 			/* MONSTER DIE */
 			dead_npc(monster);
+
+			/* 플레이어의 시야에서도 삭제한다 */
+			update_view_leave(monster);
 			
 			/* PLAYER EXP 획득 */
 			g_clients[id].exp += g_clients[monster].exp;
@@ -267,7 +270,7 @@ void process_attck(int id)
 			if (isUP >= LEVEL_UP_EXP)
 			{
 				++g_clients[id].lev;
-				g_clients[id].exp = 0;
+				g_clients[id].exp = ZERO_EXP;
 			}
 		}
 		else
@@ -277,9 +280,75 @@ void process_attck(int id)
 
 			attack_start_npc(monster);
 		}
+		send_stat_change_packet(id, monster);
 	}
 
-	send_stat_change_packet(id);
+	send_stat_change_packet(id, id);
+}
+
+void update_view_leave(int id)
+{
+	unordered_set <int> old_viewlist;
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_near(id, i)) old_viewlist.insert(i);
+	}
+
+
+	/* 부활 위치 초기화 & HP 초기화 */
+	g_clients[id].x = g_clients[id].ori_x;
+	g_clients[id].y = g_clients[id].ori_y;
+	g_clients[id].hp = g_clients[id].maxhp;
+
+	if (!is_npc(id))
+		send_move_packet(id, id);
+
+	/* 이동을 했다면 주위의 플레이어에게 알려주자 */
+	unordered_set <int> new_viewlist;
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (id == i) continue;
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_near(id, i)) new_viewlist.insert(i);
+	}
+
+	/* [움직이기 전 시야 검색]*/
+	for (auto& pl : old_viewlist)
+	{
+		// NPC가 움직인 후 유저가 시야 내에 있는 경우
+		if (0 < new_viewlist.count(pl))
+		{
+			if (g_clients[pl].view_list.count(id))		/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Move Packet Send */
+				send_move_packet(pl, id);
+			else										/* 유저의 시야에 현재 나(NPC)가 없을 경우 -> NPC의 Enter Packet Send */
+			{
+				g_clients[pl].view_list.insert(id);
+				send_enter_packet(pl, id);
+			}
+		}
+		/* NPC가 움직인 후 유저가 시야 내에 없는 경우 */
+		else
+		{
+			if (g_clients[pl].view_list.count(id) > 0)	/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Leave Packet Send */
+			{
+				g_clients[pl].view_list.erase(id);
+				send_leave_packet(pl, id);
+			}
+		}
+	}
+
+	/* [움직인 후 시야 검색]*/
+	for (auto& pl : new_viewlist)
+	{
+		if (0 == g_clients[pl].view_list.count(id))		/* 해당 유저의 시야에 나(NPC)가 없는 경우 -> 시야에 등록, Enter 패킷 전송 */
+		{
+			g_clients[pl].view_list.insert(id);
+			send_enter_packet(pl, id);
+		}
+		else											/* 해당 유저의 시야에 나(NPC)가 있는 경우 -> Move 패킷 전송 */
+			send_move_packet(pl, id);
+	}
 }
 
 void process_packet(int id)
@@ -346,17 +415,17 @@ void process_packet(int id)
 		cs_packet_attack* p = reinterpret_cast<cs_packet_attack*>(g_clients[id].m_packet_start);
 		process_attck(id);
 	}
-		break;
+	break;
+
 	case CS_CHAT:
 	{
 		cs_packet_chat* p = reinterpret_cast<cs_packet_chat*>(g_clients[id].m_packet_start);
 		for (auto& pl : g_clients[id].view_list)
 		{
 			send_chat_packet(pl, id, p->message);
-		}
-		
+		}	
 	}
-		break;
+	break;
 	case CS_LOGOUT:
 		break;
 	case CS_TELEORT:

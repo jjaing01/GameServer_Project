@@ -44,6 +44,7 @@ private:
 	high_resolution_clock::time_point m_time_out;
 	sf::Text m_text;
 	sf::Text m_name;
+	sf::Text m_Level;
 
 public:
 	int m_x, m_y;
@@ -97,6 +98,27 @@ public:
 			g_window->draw(m_text);
 		}
 	}
+	void npc_draw()
+	{
+		if (false == m_showing) return;
+		float rx = (m_x - g_left_x) * 65.0f + 8;
+		float ry = (m_y - g_top_y) * 65.0f + 8;
+		m_sprite.setPosition(rx, ry);
+		g_window->draw(m_sprite);
+		m_name.setPosition(rx - 10, ry - 10);
+		g_window->draw(m_name);
+
+		m_Level.setCharacterSize(35); // term project
+		m_Level.setPosition(rx - 20, ry - 60);
+		g_window->draw(m_Level);
+
+		if (high_resolution_clock::now() < m_time_out)
+		{
+			m_text.setCharacterSize(35); // term project
+			m_text.setPosition(rx - 10, ry - 50);
+			g_window->draw(m_text);
+		}
+	}
 	void set_name(char str[]) {
 		m_name.setFont(g_font);
 		m_name.setString(str);
@@ -105,6 +127,16 @@ public:
 		m_name.setOutlineColor(sf::Color::Black); // À±°û¼±
 		m_name.setStyle(sf::Text::Bold);
 	}
+
+	void set_lev_hp(char str[]) {
+		m_Level.setFont(g_font);
+		m_Level.setString(str);
+		m_Level.setFillColor(sf::Color(255, 0, 0));
+		m_Level.setOutlineThickness(2); // ±½±â
+		m_Level.setOutlineColor(sf::Color::Yellow); // À±°û¼±
+		m_Level.setStyle(sf::Text::Bold);
+	}
+
 	void add_chat(char chat[]) {
 		m_text.setFont(g_font);
 		m_text.setString(chat);
@@ -247,9 +279,25 @@ void ProcessPacket(char* ptr)
 	case SC_PACKET_STAT_CHANGE:
 	{
 		sc_packet_stat_change* my_packet = reinterpret_cast<sc_packet_stat_change*>(ptr);
-		avatar.level = my_packet->level;
-		avatar.exp = my_packet->exp;
-		avatar.hp = my_packet->hp;
+
+		int other_id = my_packet->id;
+		if (other_id == g_myid)
+		{
+			avatar.level = my_packet->level;
+			avatar.exp = my_packet->exp;
+			avatar.hp = my_packet->hp;
+		}
+		else
+		{
+			npcs[other_id].level = my_packet->level;
+			npcs[other_id].exp = my_packet->exp;
+			npcs[other_id].hp = my_packet->hp;
+			
+			char buf_npc[MAX_STR_LEN];
+			sprintf_s(buf_npc, "Level:%d / HP:%d", npcs[other_id].level, npcs[other_id].hp);
+			npcs[other_id].set_lev_hp(buf_npc);
+		}
+		
 		break;
 	}
 
@@ -327,17 +375,17 @@ void client_main()
 		}
 	}
 	avatar.draw();
-	//	for (auto &pl : players) pl.draw();
-	for (auto& npc : npcs) npc.second.draw();
+	
+	for (auto& npc : npcs)
+	{
+		npc.second.npc_draw();
+	}
 	
 	/* À§Ä¡ ÁÂÇ¥ */
 	sf::Text text;
 	text.setFont(g_font);
 	char buf[100];
-	/*sprintf_s(buf, "(%d, %d)", avatar.m_x, avatar.m_y);
-	text.setString(buf);
-	g_window->draw(text);*/
-
+	
 #ifdef ADD
 	/* ·¹º§ & °æÇèÄ¡ */
 	sf::Text level;
@@ -383,6 +431,10 @@ void client_main()
 	Chatting.setString(chatting);
 	Chatting.setPosition(810, 1250);
 	g_window->draw(Chatting);
+
+
+	
+
 #endif // ADD
 }
 
@@ -480,7 +532,8 @@ int main()
 					send_move_packet(MV_DOWN);
 					break;
 #ifdef ADD
-				case sf::Keyboard::Space:
+					/* °ø°Ý */
+				case sf::Keyboard::A:
 					send_attack_packet();
 					break;
 				

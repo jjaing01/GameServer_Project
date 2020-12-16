@@ -107,7 +107,15 @@ void dead_npc(int id)
 	/* MONSTER DIE */
 	STATUS prev_state = ST_ATTACK;
 	if (true == atomic_compare_exchange_strong(&g_clients[id].m_status, &prev_state, ST_DEAD))
-		add_timer(id, OP_MONSTER_DIE, system_clock::now() + 30s);
+		add_timer(id, OP_MONSTER_DIE, system_clock::now() + 1s);
+}
+
+void regen_npc(int id)
+{
+	/* MONSTER REGEN */
+	STATUS prev_state = ST_DEAD;
+	if (true == atomic_compare_exchange_strong(&g_clients[id].m_status, &prev_state, ST_STOP))
+		add_timer(id, OP_MONSTER_REGEN, system_clock::now() + 30s);
 }
 
 void add_timer(int obj_id, OPMODE ev_type, system_clock::time_point t)
@@ -208,7 +216,8 @@ void random_move_npc(int id)
 	/* NPC 주변에 유저들이 없는 경우 -> 가만히 있기 */
 	if (true == new_viewlist.empty()) 
 	{
-		g_clients[id].m_status = ST_STOP;
+		if (g_clients[id].m_status != ST_DEAD)
+			g_clients[id].m_status = ST_STOP;
 	}
 	
 	// Lua Script NPC AI
@@ -331,7 +340,8 @@ void agro_move_orc(int id)
 	/* NPC 주변에 유저들이 없는 경우 -> 가만히 있기 */
 	if (true == new_viewlist.empty())
 	{
-		g_clients[id].m_status = ST_STOP;
+		if (g_clients[id].m_status != ST_DEAD)
+			g_clients[id].m_status = ST_STOP;
 	}
 
 	// Lua Script NPC AI
@@ -345,26 +355,78 @@ void agro_move_orc(int id)
 	}
 }
 
+void process_regen_npc(int id)
+{
+	unordered_set <int> old_viewlist;
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_near(id, i)) old_viewlist.insert(i);
+	}
+
+
+	/* 부활 위치 초기화 & HP 초기화 */
+	g_clients[id].x = g_clients[id].ori_x;
+	g_clients[id].y = g_clients[id].ori_y;
+	g_clients[id].hp = g_clients[id].maxhp;
+
+	/* 이동을 했다면 주위의 플레이어에게 알려주자 */
+	unordered_set <int> new_viewlist;
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (id == i) continue;
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_near(id, i)) new_viewlist.insert(i);
+	}
+
+	/* [움직이기 전 시야 검색]*/
+	for (auto& pl : old_viewlist)
+	{
+		// NPC가 움직인 후 유저가 시야 내에 있는 경우
+		if (0 < new_viewlist.count(pl))
+		{
+			if (g_clients[pl].view_list.count(id))		/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Move Packet Send */
+				send_move_packet(pl, id);
+			else										/* 유저의 시야에 현재 나(NPC)가 없을 경우 -> NPC의 Enter Packet Send */
+			{
+				g_clients[pl].view_list.insert(id);
+				send_enter_packet(pl, id);
+			}
+		}
+		/* NPC가 움직인 후 유저가 시야 내에 없는 경우 */
+		else
+		{
+			if (g_clients[pl].view_list.count(id) > 0)	/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Leave Packet Send */
+			{
+				g_clients[pl].view_list.erase(id);
+				send_leave_packet(pl, id);
+			}
+		}
+	}
+
+	/* [움직인 후 시야 검색]*/
+	for (auto& pl : new_viewlist)
+	{
+		if (0 == g_clients[pl].view_list.count(id))		/* 해당 유저의 시야에 나(NPC)가 없는 경우 -> 시야에 등록, Enter 패킷 전송 */
+		{
+			g_clients[pl].view_list.insert(id);
+			send_enter_packet(pl, id);
+		}
+		else											/* 해당 유저의 시야에 나(NPC)가 있는 경우 -> Move 패킷 전송 */
+			send_move_packet(pl, id);
+	}
+}
+
 void process_attack_npc(int id)
 {
-	/* NPC가 공격할 대상 체크 */
+	/* NPC가 전투 상태라면 */
 	if (g_clients[id].m_status == ST_ATTACK)
 	{
+		/* NPC가 공격할 대상 체크 */
 		int target_id = g_clients[id].m_target_id;
 
+		/* 공격 대상이 존재하지 않으면 전투 X */
 		if(!is_attack(id, target_id))
-		{
-			attack_stop_npc(id);
-
-			g_clients[id].c_lock.lock();
-			g_clients[id].m_target_id = -1;
-			g_clients[id].c_lock.unlock();
-
-			return;
-		}
-
-		/* 공격할 대상이 없다면 전투 종료 */
-		if (!g_clients[target_id].in_use && target_id > -1)
 		{
 			attack_stop_npc(id);
 
@@ -385,15 +447,10 @@ void process_attack_npc(int id)
 			{
 				/* TARGET DIE */
 				// 플레이어 경험치 반토막 & HP 회복
-				g_clients[target_id].hp = g_clients[target_id].maxhp;
 				g_clients[target_id].exp *= 0.5f;
 
-				// 플레이어 위치 초기화 (MOVE PACKET으로 전달해야 함, 주위 플레이어 시야 리스트 업데이트)
-				g_clients[target_id].x = g_clients[target_id].ori_x;
-				g_clients[target_id].y = g_clients[target_id].ori_y;
-
 				if (g_clients[target_id].exp <= ZERO_EXP)
-					g_clients[target_id].exp = 0;
+					g_clients[target_id].exp = ZERO_EXP;
 
 				/* 플레이어가 죽었으므로 전투 모드 OFF */
 				attack_stop_npc(id);
@@ -401,9 +458,12 @@ void process_attack_npc(int id)
 				g_clients[id].c_lock.lock();
 				g_clients[id].m_target_id = -1;
 				g_clients[id].c_lock.unlock();
+
+				/* 플레이어가 죽고 귀환했으므로 주변 유저들의 시야 처리 및 위치 이동 */
+				update_view_leave(target_id);
 			}
+			send_stat_change_packet(target_id, target_id);
 		}
-		send_stat_change_packet(target_id);
 
 		/* 플레이어 사망 처리 -> MOVE/LEAVE/ENTER */
 	}
