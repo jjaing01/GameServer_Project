@@ -15,6 +15,7 @@ void initialize_NPC()
 		g_clients[i].m_bIsBye = false;
 		g_clients[i].m_iMoveDir = 0;
 
+		g_clients[i].m_bIsDead = false;
 		g_clients[i].m_target_id = -1;			// NPC 공격 대상
 		g_clients[i].lev = (abs(g_clients[i].x - (WORLD_WIDTH / 2)) + abs(g_clients[i].y - (WORLD_WIDTH / 2))) / 100 + 1;	// 거리에 따른 레벨 조정 (맵 중심부- 저렙 구간)
 		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														
@@ -251,6 +252,9 @@ void random_move_npc(int id)
 
 void agro_move_orc(int id)
 {
+	if (g_clients[id].m_bIsDead)
+		return;
+
 	unordered_set <int> old_viewlist;
 	unordered_set <int> old_targetlist;
 
@@ -366,6 +370,9 @@ void agro_move_orc(int id)
 
 void peace_move_elf(int id)
 {
+	if (g_clients[id].m_bIsDead)
+		return;
+
 	unordered_set <int> old_viewlist;
 
 	/* AGRO Monster 시야 설정 */
@@ -450,6 +457,11 @@ void process_regen_npc(int id)
 		if (true == is_near(id, i)) old_viewlist.insert(i);
 	}
 
+	char buf[MAX_STR_LEN];
+	sprintf_s(buf, "[Monster_%d]가 부활하였습니다!", id);
+	send_chat_packet(0, 0, buf);
+
+	g_clients[id].m_bIsDead = false;
 
 	/* 부활 위치 초기화 & HP 초기화 */
 	g_clients[id].x = g_clients[id].ori_x;
@@ -528,6 +540,10 @@ void process_attack_npc(int id)
 			/* TARGET HP 깎기 */
 			g_clients[target_id].hp -= g_clients[id].att;
 
+			char buf[MAX_STR_LEN];
+			sprintf_s(buf, "[Monster_%d]가 [User_%d]를 공격하였습니다!", id, target_id);
+			send_chat_packet(target_id, target_id, buf);
+
 			/* TARGET DEAD */
 			if (g_clients[target_id].hp <= ZERO_HP)
 			{
@@ -544,6 +560,10 @@ void process_attack_npc(int id)
 				g_clients[id].c_lock.lock();
 				g_clients[id].m_target_id = -1;
 				g_clients[id].c_lock.unlock();
+
+				memset(buf, 0, sizeof(buf));
+				sprintf_s(buf, "[User ID_%d]님이 [Monster_%d]에게 죽었습니다...", target_id, id);
+				send_chat_packet(id, id, buf);
 
 				/* 플레이어가 죽고 귀환했으므로 주변 유저들의 시야 처리 및 위치 이동 */
 				update_view_leave(target_id);

@@ -93,7 +93,7 @@ public:
 		g_window->draw(m_name);
 		if (high_resolution_clock::now() < m_time_out) 
 		{
-			m_text.setCharacterSize(35); // term project
+			m_text.setCharacterSize(35);
 			m_text.setPosition(rx - 10, ry - 50);
 			g_window->draw(m_text);
 		}
@@ -378,7 +378,10 @@ void client_main()
 	
 	for (auto& npc : npcs)
 	{
-		npc.second.npc_draw();
+		if (npc.second.hp <= 0)
+			npc.second.hide();
+		else
+			npc.second.npc_draw();
 	}
 	
 	/* À§Ä¡ ÁÂÇ¥ */
@@ -415,14 +418,14 @@ void client_main()
 
 	/* chatting box */
 	sf::RectangleShape chat;
-	chat.setPosition(800, 1000);
-	chat.setSize(sf::Vector2f(500, 300));
+	chat.setPosition(800, 900);
+	chat.setSize(sf::Vector2f(800, 400));
 	chat.setFillColor(sf::Color(0, 0, 0, 200));
 	g_window->draw(chat);
 
 	sf::RectangleShape chat2;
 	chat2.setPosition(800, 1250);
-	chat2.setSize(sf::Vector2f(500, 40));
+	chat2.setSize(sf::Vector2f(800, 40));
 	chat2.setFillColor(sf::Color(200, 200, 200, 200));
 	g_window->draw(chat2);
 
@@ -431,9 +434,6 @@ void client_main()
 	Chatting.setString(chatting);
 	Chatting.setPosition(810, 1250);
 	g_window->draw(Chatting);
-
-
-	
 
 #endif // ADD
 }

@@ -248,33 +248,47 @@ void process_attck(int id)
 	/* 공격 리스트 내의 NPC들 공격 */
 	for (auto& monster : new_attcklist)
 	{	
+		/* 죽어있는 몬스터는 공격 불가 */
+		if (g_clients[monster].m_bIsDead)
+			continue;
+
 		/* MONSTER HP 깎기 */
 		g_clients[monster].hp -= g_clients[id].att;
 
-
+		char buf[MAX_STR_LEN];
+		sprintf_s(buf, "[User ID_%d]님이 [Monster_%d]를 공격하였습니다!", id, monster);
+		send_chat_packet(id, id, buf);
+		
 		/* Monster DEAD */
 		if (g_clients[monster].hp <= ZERO_HP)
 		{	
 			g_clients[monster].hp = ZERO_HP;
-			if (g_clients[monster].m_status == ST_ATTACK)
+
+			/* MONSTER DIE */
+			dead_npc(monster);
+			g_clients[monster].m_bIsDead = true;
+
+			/* 플레이어의 시야에서도 삭제한다 */
+			update_view_leave(monster);
+
+			/* PLAYER EXP 획득 */
+			g_clients[id].exp += g_clients[monster].exp;
+
+			memset(buf, 0, sizeof(buf));
+			sprintf_s(buf, "[User ID_%d]님이 [Monster_%d]를 사냥하여 경험치 %d을 획득하였습니다!", id, monster, g_clients[monster].exp);
+			send_chat_packet(id, id, buf);
+
+			/* PLAYER LEVEL UP 가능 여부 */
+			int isUP = g_clients[id].exp;
+			if (isUP >= LEVEL_UP_EXP * g_clients[id].lev)
 			{
-				/* MONSTER DIE */
-				dead_npc(monster);
+				++g_clients[id].lev;
+				g_clients[id].exp = ZERO_EXP;
 
-				/* 플레이어의 시야에서도 삭제한다 */
-				update_view_leave(monster);
-
-				/* PLAYER EXP 획득 */
-				g_clients[id].exp += g_clients[monster].exp;
-
-				/* PLAYER LEVEL UP 가능 여부 */
-				int isUP = g_clients[id].exp;
-				if (isUP >= LEVEL_UP_EXP * g_clients[id].lev)
-				{
-					++g_clients[id].lev;
-					g_clients[id].exp = ZERO_EXP;
-				}
-			}	
+				memset(buf, 0, sizeof(buf));
+				sprintf_s(buf, "[User ID_%d]님 Level UP 성공! [현재 레벨: %d]입니다.", id, g_clients[id].lev);
+				send_chat_packet(id, id, buf);
+			}		
 		}
 		else
 		{
