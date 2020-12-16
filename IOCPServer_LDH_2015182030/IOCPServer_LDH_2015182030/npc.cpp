@@ -270,7 +270,9 @@ void agro_move_orc(int id)
 				send_move_packet(pl, id);
 			else										/* 유저의 시야에 현재 나(NPC)가 없을 경우 -> NPC의 Enter Packet Send */
 			{
+				g_clients[pl].vl.lock();
 				g_clients[pl].view_list.insert(id);
+				g_clients[pl].vl.unlock();
 				send_enter_packet(pl, id);
 			}
 		}
@@ -279,7 +281,9 @@ void agro_move_orc(int id)
 		{
 			if (g_clients[pl].view_list.count(id) > 0)	/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Leave Packet Send */
 			{
+				g_clients[pl].vl.lock();
 				g_clients[pl].view_list.erase(id);
+				g_clients[pl].vl.unlock();
 				send_leave_packet(pl, id);
 			}
 		}
@@ -290,7 +294,9 @@ void agro_move_orc(int id)
 	{
 		if (0 == g_clients[pl].view_list.count(id))		/* 해당 유저의 시야에 나(NPC)가 없는 경우 -> 시야에 등록, Enter 패킷 전송 */
 		{
+			g_clients[pl].vl.lock();
 			g_clients[pl].view_list.insert(id);
+			g_clients[pl].vl.unlock();
 			send_enter_packet(pl, id);
 		}
 		else											/* 해당 유저의 시야에 나(NPC)가 있는 경우 -> Move 패킷 전송 */
