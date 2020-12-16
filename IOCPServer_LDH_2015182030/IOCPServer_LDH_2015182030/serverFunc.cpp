@@ -34,12 +34,12 @@ int cal_degree(int player, int monster)
 {
 	int w = g_clients[player].x - g_clients[monster].x;
 	int h = g_clients[player].y - g_clients[monster].y;
-	float dist = sqrt(w * w + h * h);
+	float dist = sqrtf(w * w + h * h);
 
 	float fAngle = acosf(w / dist);
 
 	if (g_clients[monster].y < g_clients[player].y)
 		fAngle *= -1.f;
 
-	return (fAngle * 180.f / PI);
+	return (float)(fAngle * 180.f / PI);
 }

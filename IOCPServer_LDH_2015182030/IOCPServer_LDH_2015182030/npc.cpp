@@ -384,10 +384,28 @@ void process_attack_npc(int id)
 			if (g_clients[target_id].hp <= ZERO_HP)
 			{
 				/* TARGET DIE */
-				
+				// 플레이어 경험치 반토막 & HP 회복
+				g_clients[target_id].hp = g_clients[target_id].maxhp;
+				g_clients[target_id].exp *= 0.5f;
+
+				// 플레이어 위치 초기화 (MOVE PACKET으로 전달해야 함, 주위 플레이어 시야 리스트 업데이트)
+				g_clients[target_id].x = g_clients[target_id].ori_x;
+				g_clients[target_id].y = g_clients[target_id].ori_y;
+
+				if (g_clients[target_id].exp <= ZERO_EXP)
+					g_clients[target_id].exp = 0;
+
+				/* 플레이어가 죽었으므로 전투 모드 OFF */
+				attack_stop_npc(id);
+
+				g_clients[id].c_lock.lock();
+				g_clients[id].m_target_id = -1;
+				g_clients[id].c_lock.unlock();
 			}
 		}
 		send_stat_change_packet(target_id);
+
+		/* 플레이어 사망 처리 -> MOVE/LEAVE/ENTER */
 	}
 
 }

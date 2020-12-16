@@ -348,11 +348,20 @@ void process_packet(int id)
 	}
 		break;
 	case CS_CHAT:
+	{
+		cs_packet_chat* p = reinterpret_cast<cs_packet_chat*>(g_clients[id].m_packet_start);
+		for (auto& pl : g_clients[id].view_list)
+		{
+			send_chat_packet(pl, id, p->message);
+		}
+		
+	}
 		break;
 	case CS_LOGOUT:
 		break;
 	case CS_TELEORT:
 		break;
+
 	default:
 #ifdef CHECKING
 		cout << "Unknown Packet type [" << p_type << "] from Client [" << id << "]\n";

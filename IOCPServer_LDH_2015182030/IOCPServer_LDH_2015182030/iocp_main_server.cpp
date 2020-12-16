@@ -139,6 +139,8 @@ void add_new_client(SOCKET ns)
 
 		g_clients[i].x = rand() % WORLD_WIDTH;
 		g_clients[i].y = rand() % WORLD_HEIGHT;
+		g_clients[i].ori_x = g_clients[i].x;
+		g_clients[i].ori_y = g_clients[i].y;
 		g_clients[i].hp = INIT_HP;
 		g_clients[i].maxhp = INIT_HP;
 		g_clients[i].lev = 1;

@@ -15,6 +15,7 @@ constexpr int KEY_SERVER = 1000000;
 
 /* GAME CONTENTS */
 constexpr short ZERO_HP = 0;
+constexpr short ZERO_EXP = 0;
 constexpr short LEVEL_UP_EXP = 100;
 constexpr int ATTCK_RANGE	= 1;
 constexpr int ORC_TARGET_RANGE = 5;
