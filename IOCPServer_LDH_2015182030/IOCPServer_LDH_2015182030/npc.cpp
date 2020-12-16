@@ -6,16 +6,18 @@ void initialize_NPC()
 	cout << "Initialize NPC" << endl;
 	for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
 	{
+		/* 위치값 초기화 */
 		g_clients[i].x = rand() % WORLD_WIDTH;
 		g_clients[i].y = rand() % WORLD_HEIGHT;
-		g_clients[i].ori_x = g_clients[i].x;
-		g_clients[i].ori_y = g_clients[i].y;
+		g_clients[i].ori_x = g_clients[i].x;	// 부활 위치
+		g_clients[i].ori_y = g_clients[i].y;	// 부활 위치
 
 		g_clients[i].m_bIsBye = false;
 		g_clients[i].m_iMoveDir = 0;
-		g_clients[i].m_target_id = -1;
+
+		g_clients[i].m_target_id = -1;			// NPC 공격 대상
 		g_clients[i].lev = (abs(g_clients[i].x - (WORLD_WIDTH / 2)) + abs(g_clients[i].y - (WORLD_WIDTH / 2))) / 100 + 1;	// 거리에 따른 레벨 조정 (맵 중심부- 저렙 구간)
-		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														// Term Project 요구 사항
+		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														
 
 		/* NPC TYPE: ORC */
 		if (i < MAX_USER + NUM_NPC / 2)
@@ -23,39 +25,57 @@ void initialize_NPC()
 			g_clients[i].type = TYPE_ORC;
 			g_clients[i].att = ORC_ATT;
 			g_clients[i].hp = ORC_HP;
-			g_clients[i].maxhp = ORC_HP;			
+			g_clients[i].maxhp = ORC_HP;
+			g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 4;
 		}
 		/* NPC TYPE: ELF */
-		else
+		else if (MAX_USER + NUM_NPC / 2 <= i && i < MAX_USER + NUM_NPC - 1)
 		{
 			g_clients[i].type = TYPE_ELF;
 			g_clients[i].att = ELF_ATT;
 			g_clients[i].hp = ELF_HP;
 			g_clients[i].maxhp = ELF_HP;
+			g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 4;
+		}
+		/* NPC TYPE: NORMAL */
+		else if (MAX_USER + NUM_NPC - 1 <= i && i < MAX_USER + NUM_NPC)
+		{
+			/* NORMAL NPC는 무적 */
+			g_clients[i].x = 41;
+			g_clients[i].y = 66;
+			g_clients[i].ori_x = g_clients[i].x;	// 부활 위치
+			g_clients[i].ori_y = g_clients[i].y;	// 부활 위치
+
+			g_clients[i].type = TYPE_NORMAL;
+			g_clients[i].att = MASTER;
+			g_clients[i].hp = MASTER;
+			g_clients[i].maxhp = MASTER;
+			g_clients[i].lev = MASTER;
+			g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 4;
+
+			/* Create Lua Virtaul Machine */
+			lua_State* L = g_clients[i].L = luaL_newstate();
+			luaL_openlibs(L);
+
+			/* file load는 NPC 종류마다 달라야한다. 지금은 monster 뿐이므로 이렇게 한다.*/
+			int error = luaL_loadfile(L, "monster.lua");
+			error = lua_pcall(L, 0, 0, 0);
+
+			lua_getglobal(L, "set_uid");
+			lua_pushnumber(L, i);
+			lua_pcall(L, 1, 1, 0);
+
+			/* 루아가 사용할 수 있는 API 함수를 정해준다. */
+			lua_register(L, "API_SendMessage", API_SendMessage);
+			lua_register(L, "API_get_x", API_get_x);
+			lua_register(L, "API_get_y", API_get_y);
+			lua_register(L, "API_IsBye", API_IsBye);
 		}
 
 		char npc_name[50];
 		sprintf_s(npc_name, "N%d", i);
 		strcpy_s(g_clients[i].name, npc_name);
 		g_clients[i].m_status = ST_STOP;
-
-		/* Create Lua Virtaul Machine */
-		lua_State* L = g_clients[i].L = luaL_newstate();
-		luaL_openlibs(L);
-
-		/* file load는 NPC 종류마다 달라야한다. 지금은 monster 뿐이므로 이렇게 한다.*/
-		int error = luaL_loadfile(L, "monster.lua");
-		error = lua_pcall(L, 0, 0, 0);
-
-		lua_getglobal(L, "set_uid");
-		lua_pushnumber(L, i);
-		lua_pcall(L, 1, 1, 0);
-
-		/* 루아가 사용할 수 있는 API 함수를 정해준다. */
-		lua_register(L, "API_SendMessage", API_SendMessage);
-		lua_register(L, "API_get_x", API_get_x);
-		lua_register(L, "API_get_y", API_get_y);
-		lua_register(L, "API_IsBye", API_IsBye);
 	}
 	cout << "NPC Initialize Finish" << endl;
 }
@@ -68,8 +88,7 @@ void wake_up_npc(int id)
 	{
 		if (g_clients[id].type == TYPE_ELF)
 		{
-			//opmode = OP_ELF_MOVE;
-			add_timer(id, OP_RANDOM_MOVE, system_clock::now() + 1s);
+			add_timer(id, OP_ELF_MOVE, system_clock::now() + 1s);
 		}
 		else if (g_clients[id].type == TYPE_ORC)
 		{
@@ -343,15 +362,82 @@ void agro_move_orc(int id)
 		if (g_clients[id].m_status != ST_DEAD)
 			g_clients[id].m_status = ST_STOP;
 	}
+}
 
-	// Lua Script NPC AI
-	for (auto pc : new_viewlist)
+void peace_move_elf(int id)
+{
+	unordered_set <int> old_viewlist;
+
+	/* AGRO Monster 시야 설정 */
+	for (int i = 0; i < MAX_USER; ++i)
 	{
-		/* 공격 사거리 내에 들어왔을 경우: 플레이어 공격 */
-		OVER_EX* over = new OVER_EX;
-		over->object_id = pc;
-		over->op_mode = OPMODE::OP_PLAYER_MOVE_NOTIFY;
-		PostQueuedCompletionStatus(g_hIocp, 1, id, &over->wsa_over);
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_near(id, i)) old_viewlist.insert(i);
+	}
+
+	int x = g_clients[id].x;
+	int y = g_clients[id].y;
+
+	g_clients[id].x = x;
+	g_clients[id].y = y;
+
+	/* 이동을 했다면 주위의 플레이어에게 알려주자 */
+	unordered_set <int> new_viewlist;
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (id == i) continue;
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_near(id, i)) new_viewlist.insert(i);
+	}
+
+	/* [움직이기 전 시야 검색]*/
+	for (auto& pl : old_viewlist)
+	{
+		// NPC가 움직인 후 유저가 시야 내에 있는 경우
+		if (0 < new_viewlist.count(pl))
+		{
+			if (g_clients[pl].view_list.count(id))		/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Move Packet Send */
+				send_move_packet(pl, id);
+			else										/* 유저의 시야에 현재 나(NPC)가 없을 경우 -> NPC의 Enter Packet Send */
+			{
+				g_clients[pl].vl.lock();
+				g_clients[pl].view_list.insert(id);
+				g_clients[pl].vl.unlock();
+				send_enter_packet(pl, id);
+			}
+		}
+		/* NPC가 움직인 후 유저가 시야 내에 없는 경우 */
+		else
+		{
+			if (g_clients[pl].view_list.count(id) > 0)	/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Leave Packet Send */
+			{
+				g_clients[pl].vl.lock();
+				g_clients[pl].view_list.erase(id);
+				g_clients[pl].vl.unlock();
+				send_leave_packet(pl, id);
+			}
+		}
+	}
+
+	/* [움직인 후 시야 검색]*/
+	for (auto& pl : new_viewlist)
+	{
+		if (0 == g_clients[pl].view_list.count(id))		/* 해당 유저의 시야에 나(NPC)가 없는 경우 -> 시야에 등록, Enter 패킷 전송 */
+		{
+			g_clients[pl].vl.lock();
+			g_clients[pl].view_list.insert(id);
+			g_clients[pl].vl.unlock();
+			send_enter_packet(pl, id);
+		}
+		else											/* 해당 유저의 시야에 나(NPC)가 있는 경우 -> Move 패킷 전송 */
+			send_move_packet(pl, id);
+	}
+
+	/* NPC 주변에 유저들이 없는 경우 -> 가만히 있기 */
+	if (true == new_viewlist.empty())
+	{
+		if (g_clients[id].m_status != ST_DEAD)
+			g_clients[id].m_status = ST_STOP;
 	}
 }
 

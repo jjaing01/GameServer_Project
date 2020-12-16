@@ -9,6 +9,7 @@ void add_timer(int obj_id, OPMODE ev_type, system_clock::time_point t);			// 타�
 
 void random_move_npc(int id);													// NPC 자동 움직임 함수
 void agro_move_orc(int id);														// ORC MOVE 함수(AGRO + ROAMING)
+void peace_move_elf(int id);													// ELF MOVE 함수(PEACE + STATIC)
 void process_regen_npc(int id);													// NPC Regen 함수
 void process_attack_npc(int id);												// NPC Attack to Player						
 

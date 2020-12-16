@@ -420,7 +420,10 @@ void worker_thread()
 
 		case OPMODE::OP_ELF_MOVE:
 		{
-			random_move_npc(key);
+			if (g_clients[key].m_status == ST_ATTACK)
+				agro_move_orc(key);
+			else
+				peace_move_elf(key);
 
 			bool alive = false;
 			for (int i = 0; i < MAX_USER; ++i)
@@ -432,11 +435,11 @@ void worker_thread()
 						alive = true;
 						break;
 					}
+				}
 			}
-		}
 
 			if (true == alive)
-				add_timer(key, OP_RANDOM_MOVE, system_clock::now() + 1s);
+				add_timer(key, OP_ELF_MOVE, system_clock::now() + 1s);
 			else
 			{
 				if (g_clients[key].m_status != ST_DEAD)

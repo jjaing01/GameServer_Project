@@ -225,14 +225,12 @@ void process_move(int id, char dir)
 	/* NPC AI - lua */
 	if (false == is_npc(id))
 	{
-		for (auto& npc : new_viewlist)
+		if (new_viewlist.count(MAX_USER + NUM_NPC - 1) > 0)
 		{
-			if (false == is_npc(npc)) continue;
-
 			OVER_EX* ex_over = new OVER_EX;
 			ex_over->object_id = id;
 			ex_over->op_mode = OPMODE::OP_PLAYER_MOVE_NOTIFY;
-			PostQueuedCompletionStatus(g_hIocp, 1, npc, &ex_over->wsa_over);
+			PostQueuedCompletionStatus(g_hIocp, 1, MAX_USER + NUM_NPC - 1, &ex_over->wsa_over);
 		}
 	}
 #endif // NPC
@@ -253,25 +251,30 @@ void process_attck(int id)
 		/* MONSTER HP 깎기 */
 		g_clients[monster].hp -= g_clients[id].att;
 
+
 		/* Monster DEAD */
-		if (g_clients[monster].hp <= ZERO_HP && g_clients[monster].m_status == ST_ATTACK)
+		if (g_clients[monster].hp <= ZERO_HP)
 		{	
-			/* MONSTER DIE */
-			dead_npc(monster);
-
-			/* 플레이어의 시야에서도 삭제한다 */
-			update_view_leave(monster);
-			
-			/* PLAYER EXP 획득 */
-			g_clients[id].exp += g_clients[monster].exp;
-
-			/* PLAYER LEVEL UP 가능 여부 */
-			int isUP = g_clients[id].exp;
-			if (isUP >= LEVEL_UP_EXP)
+			g_clients[monster].hp = ZERO_HP;
+			if (g_clients[monster].m_status == ST_ATTACK)
 			{
-				++g_clients[id].lev;
-				g_clients[id].exp = ZERO_EXP;
-			}
+				/* MONSTER DIE */
+				dead_npc(monster);
+
+				/* 플레이어의 시야에서도 삭제한다 */
+				update_view_leave(monster);
+
+				/* PLAYER EXP 획득 */
+				g_clients[id].exp += g_clients[monster].exp;
+
+				/* PLAYER LEVEL UP 가능 여부 */
+				int isUP = g_clients[id].exp;
+				if (isUP >= LEVEL_UP_EXP * g_clients[id].lev)
+				{
+					++g_clients[id].lev;
+					g_clients[id].exp = ZERO_EXP;
+				}
+			}	
 		}
 		else
 		{

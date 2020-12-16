@@ -30,3 +30,5 @@ constexpr int INIT_ATT		= 5;	// 플레이어 초기 공격력
 constexpr int ORC_ATT		= 7;	// ORC 공격력
 constexpr int ELF_ATT		= 3;	// ELF 공격력
 constexpr int BOSS_ATT		= 10;	// BOSS 공격력
+
+constexpr int MASTER		= 99999;

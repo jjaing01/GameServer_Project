@@ -17,7 +17,7 @@ function event_player_move(player)
 	--print (moveCnt);
 	if (bIsBye == true) then							-- NPC 3칸 이동 카운트 시작
 		if (moveCnt >= 2) then								-- NPC 3칸 이동 완료했을 경우 
-			API_SendMessage(myid, player, "BYE");			-- NPC say "BYE"
+			API_SendMessage(myid, player, "Thank You!!");			-- NPC say "BYE"
 			moveCnt = 0;									-- 이동 카운트 0으로 초기화
 			dir = -1;										-- 움직일 방향 초기화
 			bIsBye = false;									-- NPC 3칸 카운트 중지
@@ -30,7 +30,7 @@ function event_player_move(player)
 
 	if (player_x == my_x) then
 		if (player_y == my_y) then						-- 플레이어 & NPC 충돌
-			API_SendMessage(myid, player, "HELLO");			-- NPC say "HELLO"
+			API_SendMessage(myid, player, "Help Me.....");			-- NPC say "HELLO"
 			moveCnt = 0;									-- 카운트 변수 0 초기화
 			dir = math.random(0,3)							-- 움직일 방향 설정
 			if(bIsBye == false) then						

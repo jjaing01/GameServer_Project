@@ -226,7 +226,7 @@ void ProcessPacket(char* ptr)
 				npcs[id] = OBJECT{ *pieces, 192, 0, 64, 64 };  // 퀸
 				break;
 			case TYPE_NORMAL:
-				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };  // 노말몬스터
+				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };  // 노말운영자
 				break;
 			default:
 				break;
