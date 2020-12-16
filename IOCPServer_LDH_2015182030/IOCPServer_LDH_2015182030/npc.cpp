@@ -13,6 +13,7 @@ void initialize_NPC()
 
 		g_clients[i].m_bIsBye = false;
 		g_clients[i].m_iMoveDir = 0;
+		g_clients[i].m_target_id = -1;
 		g_clients[i].lev = (abs(g_clients[i].x - (WORLD_WIDTH / 2)) + abs(g_clients[i].y - (WORLD_WIDTH / 2))) / 100 + 1;	// 거리에 따른 레벨 조정 (맵 중심부- 저렙 구간)
 		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														// Term Project 요구 사항
 
@@ -83,6 +84,30 @@ void wake_up_npc(int id)
 			add_timer(id, OP_RANDOM_MOVE, system_clock::now() + 1s);
 		}
 	}
+}
+
+void attack_start_npc(int id)
+{
+	/* MONSTER ATTACK START */
+	STATUS prev_state = ST_ACTIVE;
+	if (true == atomic_compare_exchange_strong(&g_clients[id].m_status, &prev_state, ST_ATTACK))
+		add_timer(id, OP_MONSTER_ATTACK, system_clock::now() + 1s);
+}
+
+void attack_stop_npc(int id)
+{
+	/* MONSTER ATTACK STOP */
+	STATUS prev_state = ST_ATTACK;
+	atomic_compare_exchange_strong(&g_clients[id].m_status, &prev_state, ST_STOP);
+		
+}
+
+void dead_npc(int id)
+{
+	/* MONSTER DIE */
+	STATUS prev_state = ST_ATTACK;
+	if (true == atomic_compare_exchange_strong(&g_clients[id].m_status, &prev_state, ST_DEAD))
+		add_timer(id, OP_MONSTER_DIE, system_clock::now() + 30s);
 }
 
 void add_timer(int obj_id, OPMODE ev_type, system_clock::time_point t)
@@ -318,6 +343,53 @@ void agro_move_orc(int id)
 		over->op_mode = OPMODE::OP_PLAYER_MOVE_NOTIFY;
 		PostQueuedCompletionStatus(g_hIocp, 1, id, &over->wsa_over);
 	}
+}
+
+void process_attack_npc(int id)
+{
+	/* NPC가 공격할 대상 체크 */
+	if (g_clients[id].m_status == ST_ATTACK)
+	{
+		int target_id = g_clients[id].m_target_id;
+
+		if(!is_attack(id, target_id))
+		{
+			attack_stop_npc(id);
+
+			g_clients[id].c_lock.lock();
+			g_clients[id].m_target_id = -1;
+			g_clients[id].c_lock.unlock();
+
+			return;
+		}
+
+		/* 공격할 대상이 없다면 전투 종료 */
+		if (!g_clients[target_id].in_use && target_id > -1)
+		{
+			attack_stop_npc(id);
+
+			g_clients[id].c_lock.lock();
+			g_clients[id].m_target_id = -1;
+			g_clients[id].c_lock.unlock();
+
+			return;
+		}
+		/* 공격 대상이 존재하면 전투 시작 */
+		else
+		{
+			/* TARGET HP 깎기 */
+			g_clients[target_id].hp -= g_clients[id].att;
+
+			/* TARGET DEAD */
+			if (g_clients[target_id].hp <= ZERO_HP)
+			{
+				/* TARGET DIE */
+				
+			}
+		}
+		send_stat_change_packet(target_id);
+	}
+
 }
 
 int API_SendMessage(lua_State* L)

@@ -240,9 +240,6 @@ void process_move(int id, char dir)
 
 void process_attck(int id)
 {
-	short x = g_clients[id].x;
-	short y = g_clients[id].y;
-
 	/* 현재 유저의 공격 리스트 */
 	unordered_set <int> new_attcklist;
 	for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
@@ -252,18 +249,16 @@ void process_attck(int id)
 
 	/* 공격 리스트 내의 NPC들 공격 */
 	for (auto& monster : new_attcklist)
-	{
+	{	
 		/* MONSTER HP 깎기 */
 		g_clients[monster].hp -= g_clients[id].att;
 
 		/* Monster DEAD */
-		if (g_clients[monster].hp <= ZERO_HP && g_clients[monster].m_status == ST_ACTIVE)
+		if (g_clients[monster].hp <= ZERO_HP && g_clients[monster].m_status == ST_ATTACK)
 		{	
 			/* MONSTER DIE */
-			STATUS prev_state = ST_ACTIVE;
-			if (true == atomic_compare_exchange_strong(&g_clients[monster].m_status, &prev_state, ST_STOP))
-				add_timer(monster, OP_MONSTER_DIE, system_clock::now() + 30s);
-
+			dead_npc(monster);
+			
 			/* PLAYER EXP 획득 */
 			g_clients[id].exp += g_clients[monster].exp;
 
@@ -274,6 +269,13 @@ void process_attck(int id)
 				++g_clients[id].lev;
 				g_clients[id].exp = 0;
 			}
+		}
+		else
+		{
+			/* MONSTER 전투 모드 ON */
+			g_clients[monster].m_target_id = id;
+
+			attack_start_npc(monster);
 		}
 	}
 

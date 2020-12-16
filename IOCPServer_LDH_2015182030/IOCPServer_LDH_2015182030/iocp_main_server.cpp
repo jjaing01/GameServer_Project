@@ -264,6 +264,14 @@ void time_worker()
 			}
 			break;
 
+			case OPMODE::OP_MONSTER_ATTACK:
+			{
+				OVER_EX* over = new OVER_EX;
+				over->op_mode = ev.event_id;
+				PostQueuedCompletionStatus(g_hIocp, 1, ev.obj_id, &over->wsa_over);
+			}
+			break;
+
 			default:
 				break;
 			}
@@ -426,6 +434,20 @@ void worker_thread()
 			g_clients[key].x = g_clients[key].ori_x;
 			g_clients[key].y = g_clients[key].ori_y;
 			g_clients[key].hp = g_clients[key].maxhp;
+
+			if (over_ex != nullptr)
+				delete over_ex;
+		}
+		break;
+
+		case OPMODE::OP_MONSTER_ATTACK:
+		{
+			process_attack_npc(key);
+
+			if (g_clients[key].m_status == ST_ATTACK)
+				add_timer(key, OP_MONSTER_ATTACK, system_clock::now() + 1s);
+			else
+				g_clients[key].m_status = ST_STOP;
 
 			if (over_ex != nullptr)
 				delete over_ex;

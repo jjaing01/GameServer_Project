@@ -29,6 +29,7 @@ struct client_info
 	short ori_x, ori_y;
 	int hp, lev, exp;
 	int maxhp, att;
+	int m_target_id;
 	bool m_bIsBye;
 	int m_iMoveDir;
 	mutex c_lock;
