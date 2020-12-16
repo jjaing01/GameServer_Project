@@ -4,6 +4,7 @@ void wake_up_npc(int id);														// NPC 깨우는 함수
 void add_timer(int obj_id, OPMODE ev_type, system_clock::time_point t);			// 타이머 쓰레드에 명령 등록 함수
 
 void random_move_npc(int id);													// NPC 자동 움직임 함수
+void agro_move_orc(int id);														// ORC MOVE 함수(AGRO + ROAMING)
 
 /* LUA FUNCTION */
 int API_SendMessage(lua_State* L);

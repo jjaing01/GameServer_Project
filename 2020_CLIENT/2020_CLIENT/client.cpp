@@ -162,6 +162,7 @@ void ProcessPacket(char* ptr)
 	{
 		sc_packet_enter* my_packet = reinterpret_cast<sc_packet_enter*>(ptr);
 		int id = my_packet->id;
+		int obj_type = my_packet->o_type;
 
 		if (id == g_myid) {
 			avatar.move(my_packet->x, my_packet->y);
@@ -170,12 +171,27 @@ void ProcessPacket(char* ptr)
 			avatar.show();
 		}
 		else {
-			if (id < NPC_ID_START)
-				npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };
-			else if (id < NPC_ID_START + NUM_NPC / 2)
-				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };
-			else
-				npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // ¸»
+			switch (obj_type)
+			{
+			case TYPE_ORC:
+				npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // ³ªÀÌÆ®
+				break;
+			case TYPE_ELF:
+				npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };  // Á¹°³
+				break;
+			case TYPE_BOSS:
+				npcs[id] = OBJECT{ *pieces, 192, 0, 64, 64 };  // Äý
+				break;
+			default:
+				break;
+			}
+
+			//if (id < NPC_ID_START)
+			//	npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };
+			//else if (id < NPC_ID_START + NUM_NPC / 2)
+			//	npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };
+			//else
+			//	npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // ¸»
 
 			strcpy_s(npcs[id].name, my_packet->name);
 			npcs[id].set_name(my_packet->name);

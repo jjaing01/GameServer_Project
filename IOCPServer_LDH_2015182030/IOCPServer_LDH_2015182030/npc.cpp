@@ -8,11 +8,30 @@ void initialize_NPC()
 	{
 		g_clients[i].x = rand() % WORLD_WIDTH;
 		g_clients[i].y = rand() % WORLD_HEIGHT;
+		g_clients[i].ori_x = g_clients[i].x;
+		g_clients[i].ori_y = g_clients[i].y;
+
 		g_clients[i].m_bIsBye = false;
 		g_clients[i].m_iMoveDir = 0;
-		g_clients[i].hp = 100;
-		g_clients[i].lev = 1;
-		g_clients[i].exp = 0;
+		g_clients[i].lev = (abs(g_clients[i].x - (WORLD_WIDTH / 2)) + abs(g_clients[i].y - (WORLD_WIDTH / 2))) / 100 + 1;	// 거리에 따른 레벨 조정 (맵 중심부- 저렙 구간)
+		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														// Term Project 요구 사항
+
+		/* NPC TYPE: ORC */
+		if (i < (MAX_USER + NUM_NPC) / 2)
+		{
+			g_clients[i].type = TYPE_ORC;
+			g_clients[i].att = ORC_ATT;
+			g_clients[i].hp = ORC_HP;
+			g_clients[i].maxhp = ORC_HP;			
+		}
+		/* NPC TYPE: ELF */
+		else
+		{
+			g_clients[i].type = TYPE_ORC;
+			g_clients[i].att = ELF_ATT;
+			g_clients[i].hp = ELF_HP;
+			g_clients[i].maxhp = ELF_HP;
+		}
 
 		char npc_name[50];
 		sprintf_s(npc_name, "N%d", i);
@@ -45,7 +64,21 @@ void wake_up_npc(int id)
 	STATUS prev_state = ST_STOP;
 
 	if (true == atomic_compare_exchange_strong(&g_clients[id].m_status, &prev_state, ST_ACTIVE))
-		add_timer(id, OP_RANDOM_MOVE, system_clock::now() + 1s);
+	{
+		if (g_clients[id].type == TYPE_ELF)
+		{
+			//opmode = OP_ELF_MOVE;
+			add_timer(id, OP_RANDOM_MOVE, system_clock::now() + 1s);
+		}
+		else if (g_clients[id].type == TYPE_ORC)
+		{
+			add_timer(id, OP_ORC_MOVE, system_clock::now() + 1s);
+		}
+		else if (g_clients[id].type == TYPE_BOSS)
+		{
+			add_timer(id, OP_BOSS_MOVE, system_clock::now() + 1s);
+		}		
+	}
 }
 
 void add_timer(int obj_id, OPMODE ev_type, system_clock::time_point t)
@@ -152,6 +185,121 @@ void random_move_npc(int id)
 	// Lua Script NPC AI
 	for (auto pc : new_viewlist)
 	{
+		OVER_EX* over = new OVER_EX;
+		over->object_id = pc;
+		over->op_mode = OPMODE::OP_PLAYER_MOVE_NOTIFY;
+		PostQueuedCompletionStatus(g_hIocp, 1, id, &over->wsa_over);
+	}
+}
+
+void agro_move_orc(int id)
+{
+	unordered_set <int> old_viewlist;
+
+	/* AGRO Monster 시야 설정 */
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_orc_target(id, i)) old_viewlist.insert(i);
+	}
+
+	int x = g_clients[id].x;
+	int y = g_clients[id].y;
+
+	/* ORC의 시야 내에 플레이어가 존재한다면 TARGET으로 설정 */
+	int target_id = -1;
+	int target_posX = 0;
+	int target_posY = 0;
+	int npc_oriPosX = 0;
+	int npc_oriPosY = 0;
+	if (!old_viewlist.empty())
+	{
+		target_id = *(old_viewlist.begin());
+		target_posX = g_clients[target_id].x;
+		target_posY = g_clients[target_id].y;
+		npc_oriPosX = g_clients[id].ori_x;
+		npc_oriPosY = g_clients[id].ori_y;
+	}
+
+	/* TARGET이 존재하지 않을 경우 - ROAMING MOVE */
+	if (target_id < 0)
+	{
+		switch (rand() % 4)
+		{
+		case 0: if (x > npc_oriPosX + ORC_RAOMING_DIST && x > 0) x--; break;
+		case 1: if (x < (WORLD_WIDTH - 1)) x++; break;
+		case 2: if (y > npc_oriPosY - ORC_RAOMING_DIST && y > 0) y--; break;
+		case 3: if (y < (WORLD_HEIGHT - 1)) y++; break;
+		}
+	}
+	/* TARGET이 존재할 경우 - AGRO MOVE */
+	else
+	{	
+		if (target_posX > x && x < npc_oriPosX + ORC_RAOMING_DIST && target_posX != x + 1) ++x;
+		else if (target_posX < x && x > npc_oriPosX - ORC_RAOMING_DIST && target_posX != x - 1) --x;
+		else if (target_posY > y && y < npc_oriPosY + ORC_RAOMING_DIST && target_posY != y + 1) ++y;
+		else if (target_posY < y && y > npc_oriPosY - ORC_RAOMING_DIST && target_posY != y - 1) --y;
+	}
+
+	g_clients[id].x = x;
+	g_clients[id].y = y;
+
+	/* 이동을 했다면 주위의 플레이어에게 알려주자 */
+	unordered_set <int> new_viewlist;
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (id == i) continue;
+		if (false == g_clients[i].in_use) continue;
+		if (true == is_orc_target(id, i)) new_viewlist.insert(i);
+	}
+
+	/* [움직이기 전 시야 검색]*/
+	for (auto& pl : old_viewlist)
+	{
+		// NPC가 움직인 후 유저가 시야 내에 있는 경우
+		if (0 < new_viewlist.count(pl))
+		{
+			if (g_clients[pl].view_list.count(id))		/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Move Packet Send */
+				send_move_packet(pl, id);
+			else										/* 유저의 시야에 현재 나(NPC)가 없을 경우 -> NPC의 Enter Packet Send */
+			{
+				g_clients[pl].view_list.insert(id);
+				send_enter_packet(pl, id);
+			}
+		}
+		/* NPC가 움직인 후 유저가 시야 내에 없는 경우 */
+		else
+		{
+			if (g_clients[pl].view_list.count(id) > 0)	/* 유저의 시야에 현재 나(NPC)가 있을 경우 -> NPC의 Leave Packet Send */
+			{
+				g_clients[pl].view_list.erase(id);
+				send_leave_packet(pl, id);
+			}
+		}
+	}
+
+	/* [움직인 후 시야 검색]*/
+	for (auto& pl : new_viewlist)
+	{
+		if (0 == g_clients[pl].view_list.count(id))		/* 해당 유저의 시야에 나(NPC)가 없는 경우 -> 시야에 등록, Enter 패킷 전송 */
+		{
+			g_clients[pl].view_list.insert(id);
+			send_enter_packet(pl, id);
+		}
+		else											/* 해당 유저의 시야에 나(NPC)가 있는 경우 -> Move 패킷 전송 */
+			send_move_packet(pl, id);
+	}
+
+	/* NPC 주변에 유저들이 없는 경우 -> 가만히 있기 */
+	if (true == new_viewlist.empty())
+	{
+		g_clients[id].m_status = ST_STOP;
+	}
+
+	// Lua Script NPC AI
+	for (auto pc : new_viewlist)
+	{
+		/* 공격 사거리 내에 들어왔을 경우: 플레이어 공격 */
 		OVER_EX* over = new OVER_EX;
 		over->object_id = pc;
 		over->op_mode = OPMODE::OP_PLAYER_MOVE_NOTIFY;

@@ -24,8 +24,11 @@ struct client_info
 	/*=============∞‘¿” ƒ¡≈Ÿ√˜==============*/
 	bool in_use;
 	char name[MAX_ID_LEN];
+	char type;
 	short x, y;
+	short ori_x, ori_y;
 	int hp, lev, exp;
+	int maxhp, att;
 	bool m_bIsBye;
 	int m_iMoveDir;
 	mutex c_lock;

@@ -48,6 +48,12 @@ struct sc_packet_move {
 	int move_time;
 };
 
+/* PROTOCOL 추가 확장 */
+constexpr char TYPE_PLAYER	= 0;
+constexpr char TYPE_ORC		= 1;				// AGRO + ROAMING MOVE
+constexpr char TYPE_ELF		= 2;				// PEACE + NO MOVE
+constexpr char TYPE_BOSS	= 3;				// AGRO + ROAMING MOVE
+
 struct sc_packet_enter {
 	char size;
 	char type;

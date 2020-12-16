@@ -73,7 +73,7 @@ void send_enter_packet(int to_client, int new_id)
 	g_clients[new_id].c_lock.lock();
 	strcpy_s(p.name, g_clients[new_id].name);
 	g_clients[new_id].c_lock.unlock();
-	p.o_type = 0;
+	p.o_type = g_clients[new_id].type;
 
 	send_packet(to_client, &p);
 }

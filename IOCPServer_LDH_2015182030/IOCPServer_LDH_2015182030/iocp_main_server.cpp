@@ -139,9 +139,12 @@ void add_new_client(SOCKET ns)
 
 		g_clients[i].x = rand() % WORLD_WIDTH;
 		g_clients[i].y = rand() % WORLD_HEIGHT;
-		g_clients[i].hp = 100;
+		g_clients[i].hp = INIT_HP;
+		g_clients[i].maxhp = INIT_HP;
 		g_clients[i].lev = 1;
 		g_clients[i].exp = 0;
+		g_clients[i].att = INIT_ATT;
+		g_clients[i].type = TYPE_PLAYER;
 
 		/* 해당 클라이언트 소켓 IOCP에 등록 */
 		CreateIoCompletionPort(reinterpret_cast<HANDLE>(ns), g_hIocp, i, 0);
@@ -237,6 +240,22 @@ void time_worker()
 			}
 			break;
 
+			case OPMODE::OP_ORC_MOVE:
+			{
+				OVER_EX* over = new OVER_EX;
+				over->op_mode = ev.event_id;
+				PostQueuedCompletionStatus(g_hIocp, 1, ev.obj_id, &over->wsa_over);
+			}
+			break;
+
+			case OPMODE::OP_ELF_MOVE:
+			{
+				OVER_EX* over = new OVER_EX;
+				over->op_mode = ev.event_id;
+				PostQueuedCompletionStatus(g_hIocp, 1, ev.obj_id, &over->wsa_over);
+			}
+			break;
+
 			default:
 				break;
 			}
@@ -312,13 +331,15 @@ void worker_thread()
 				}
 			}
 
-			if (true == alive) add_timer(key, OP_RANDOM_MOVE, system_clock::now() + 1s);
-			else g_clients[key].m_status = ST_STOP;
+			if (true == alive) 
+				add_timer(key, OP_RANDOM_MOVE, system_clock::now() + 1s);
+			else 
+				g_clients[key].m_status = ST_STOP;
 
 			if (over_ex != nullptr)
 				delete over_ex;
 		}
-			break;
+		break;
 
 		case OPMODE::OP_PLAYER_MOVE_NOTIFY:
 		{
@@ -332,7 +353,65 @@ void worker_thread()
 			if (over_ex != nullptr)
 				delete over_ex;
 		}
-			break;
+		break;
+
+		case OPMODE::OP_MODE_ATTACK:
+		{
+			if (over_ex != nullptr)
+				delete over_ex;
+		}
+		break;
+
+		case OPMODE::OP_ORC_MOVE:
+		{
+			agro_move_orc(key);
+
+			bool alive = false;
+			for (int i = 0; i < MAX_USER; ++i)
+			{
+				if (true == is_near(key, i))
+				{
+					if (ST_ACTIVE == g_clients[i].m_status)
+					{
+						alive = true;
+						break;
+					}
+				}
+			}
+
+			if (true == alive) 
+				add_timer(key, OP_ORC_MOVE, system_clock::now() + 1s);
+			else 
+				g_clients[key].m_status = ST_STOP;
+		}
+		break;
+
+		case OPMODE::OP_ELF_MOVE:
+		{
+			random_move_npc(key);
+
+			bool alive = false;
+			for (int i = 0; i < MAX_USER; ++i)
+			{
+				if (true == is_near(key, i))
+				{
+					if (ST_ACTIVE == g_clients[i].m_status)
+					{
+						alive = true;
+						break;
+					}
+			}
+		}
+
+			if (true == alive)
+				add_timer(key, OP_RANDOM_MOVE, system_clock::now() + 1s);
+			else
+				g_clients[key].m_status = ST_STOP;
+
+			if (over_ex != nullptr)
+				delete over_ex;
+		}
+		break;
 
 		default:
 #ifdef CHECKING
