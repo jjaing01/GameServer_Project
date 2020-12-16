@@ -177,22 +177,17 @@ void ProcessPacket(char* ptr)
 				npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // 나이트
 				break;
 			case TYPE_ELF:
-				npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };  // 졸개
+				npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };  // 엘프
 				break;
 			case TYPE_BOSS:
 				npcs[id] = OBJECT{ *pieces, 192, 0, 64, 64 };  // 퀸
 				break;
+			case TYPE_NORMAL:
+				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };  // 노말몬스터
+				break;
 			default:
 				break;
 			}
-
-			//if (id < NPC_ID_START)
-			//	npcs[id] = OBJECT{ *pieces, 64, 0, 64, 64 };
-			//else if (id < NPC_ID_START + NUM_NPC / 2)
-			//	npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };
-			//else
-			//	npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // 말
-
 			strcpy_s(npcs[id].name, my_packet->name);
 			npcs[id].set_name(my_packet->name);
 			npcs[id].move(my_packet->x, my_packet->y);
@@ -327,9 +322,9 @@ void client_main()
 	sf::Text text;
 	text.setFont(g_font);
 	char buf[100];
-	sprintf_s(buf, "(%d, %d)", avatar.m_x, avatar.m_y);
+	/*sprintf_s(buf, "(%d, %d)", avatar.m_x, avatar.m_y);
 	text.setString(buf);
-	g_window->draw(text);
+	g_window->draw(text);*/
 
 #ifdef ADD
 	/* 레벨 & 경험치 */
@@ -343,7 +338,7 @@ void client_main()
 	level.setOutlineColor(sf::Color::Black);
 	g_window->draw(level);
 
-	/* HP */
+	/* HP & POS */
 	sf::Text HpPos;
 	HpPos.setFont(g_font);
 	sprintf_s(buf, "Hp:%d / Pos:(%d, %d)", avatar.hp, avatar.m_x, avatar.m_y);

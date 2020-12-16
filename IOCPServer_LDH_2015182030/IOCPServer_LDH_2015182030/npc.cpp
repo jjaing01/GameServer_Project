@@ -17,7 +17,7 @@ void initialize_NPC()
 		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														// Term Project 요구 사항
 
 		/* NPC TYPE: ORC */
-		if (i < (MAX_USER + NUM_NPC) / 2)
+		if (i < MAX_USER + NUM_NPC / 2)
 		{
 			g_clients[i].type = TYPE_ORC;
 			g_clients[i].att = ORC_ATT;
@@ -27,7 +27,7 @@ void initialize_NPC()
 		/* NPC TYPE: ELF */
 		else
 		{
-			g_clients[i].type = TYPE_ORC;
+			g_clients[i].type = TYPE_ELF;
 			g_clients[i].att = ELF_ATT;
 			g_clients[i].hp = ELF_HP;
 			g_clients[i].maxhp = ELF_HP;
@@ -195,34 +195,45 @@ void random_move_npc(int id)
 void agro_move_orc(int id)
 {
 	unordered_set <int> old_viewlist;
+	unordered_set <int> old_targetlist;
 
 	/* AGRO Monster 시야 설정 */
 	for (int i = 0; i < MAX_USER; ++i)
 	{
 		if (false == g_clients[i].in_use) continue;
-		if (true == is_orc_target(id, i)) old_viewlist.insert(i);
+		if (true == is_near(id, i)) old_viewlist.insert(i);
 	}
+
+	for(auto& pl:old_viewlist)
+		if (true == is_orc_target(id, pl)) old_targetlist.insert(pl);
 
 	int x = g_clients[id].x;
 	int y = g_clients[id].y;
 
 	/* ORC의 시야 내에 플레이어가 존재한다면 TARGET으로 설정 */
+	bool is_target = false;
 	int target_id = -1;
 	int target_posX = 0;
 	int target_posY = 0;
 	int npc_oriPosX = 0;
 	int npc_oriPosY = 0;
-	if (!old_viewlist.empty())
+
+	/* TARGET이 존재할 경우 - AGRO MOVE */
+	if (!old_targetlist.empty())
 	{
-		target_id = *(old_viewlist.begin());
+		target_id = *(old_targetlist.begin());
 		target_posX = g_clients[target_id].x;
 		target_posY = g_clients[target_id].y;
 		npc_oriPosX = g_clients[id].ori_x;
 		npc_oriPosY = g_clients[id].ori_y;
-	}
 
+		if (target_posX > x && x < npc_oriPosX + ORC_RAOMING_DIST && target_posX != x + 1) ++x;
+		else if (target_posX < x && x > npc_oriPosX - ORC_RAOMING_DIST && target_posX != x - 1) --x;
+		else if (target_posY > y && y < npc_oriPosY + ORC_RAOMING_DIST && target_posY != y + 1) ++y;
+		else if (target_posY < y && y > npc_oriPosY - ORC_RAOMING_DIST && target_posY != y - 1) --y;
+	}
 	/* TARGET이 존재하지 않을 경우 - ROAMING MOVE */
-	if (target_id < 0)
+	else
 	{
 		switch (rand() % 4)
 		{
@@ -232,15 +243,7 @@ void agro_move_orc(int id)
 		case 3: if (y < (WORLD_HEIGHT - 1)) y++; break;
 		}
 	}
-	/* TARGET이 존재할 경우 - AGRO MOVE */
-	else
-	{	
-		if (target_posX > x && x < npc_oriPosX + ORC_RAOMING_DIST && target_posX != x + 1) ++x;
-		else if (target_posX < x && x > npc_oriPosX - ORC_RAOMING_DIST && target_posX != x - 1) --x;
-		else if (target_posY > y && y < npc_oriPosY + ORC_RAOMING_DIST && target_posY != y + 1) ++y;
-		else if (target_posY < y && y > npc_oriPosY - ORC_RAOMING_DIST && target_posY != y - 1) --y;
-	}
-
+	
 	g_clients[id].x = x;
 	g_clients[id].y = y;
 
