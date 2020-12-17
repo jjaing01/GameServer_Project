@@ -13,7 +13,16 @@ client_info g_clients[MAX_USER + NUM_NPC];
 priority_queue<event_type> g_timer_queue;
 mutex g_timer_lock;
 
+/* DATABASE 관련 변수 */
+SQLHDBC g_hdbc;
+SQLHSTMT g_hstmt;
+SQLRETURN g_retcode;
+SQLHENV g_henv;
+
 /*==============================================================함수 선언부========================================================================*/
+void connect_DB();					// Connect to Database Server 
+void disconnect_DB();				// Disconnect Database Server
+
 void Init_obj();					// 클라이언트 객체 & NPC 객체 자료구조 초기화
 void Ready_Server();				// 서버 메인 루프 초기화
 
@@ -23,10 +32,10 @@ void disconnect_client(int id);		// 유저 접속 정료 함수
 void time_worker();					// Timer Thread Enter Function
 void worker_thread();				// Worker Thread Enter Function
 
-
 /*================================================================================================================================================*/
 int main()
 {
+	/* Init Server & Connect DB */
 	Ready_Server();
 
 	initialize_NPC();
@@ -46,12 +55,59 @@ int main()
 	/* Time Thread 소멸 */
 	time_thread.join();
 
+	/* Disconnect Database */
+	disconnect_DB();
+
 	closesocket(g_hListenSock);
 	WSACleanup();
 
 	return NO_EVENT;
 }
 /*==============================================================함수 정의부========================================================================*/
+void connect_DB()
+{
+	// Allocate environment handle  
+	g_retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &g_henv);
+
+	// Set the ODBC version environment attribute  
+	if (g_retcode == SQL_SUCCESS || g_retcode == SQL_SUCCESS_WITH_INFO)
+	{
+		g_retcode = SQLSetEnvAttr(g_henv, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
+
+		// Allocate connection handle  
+		if (g_retcode == SQL_SUCCESS || g_retcode == SQL_SUCCESS_WITH_INFO)
+		{
+			g_retcode = SQLAllocHandle(SQL_HANDLE_DBC, g_henv, &g_hdbc);
+
+			// Set login timeout to 5 seconds  
+			if (g_retcode == SQL_SUCCESS || g_retcode == SQL_SUCCESS_WITH_INFO)
+			{
+				SQLSetConnectAttr(g_hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
+
+				// Connect to data source  
+				g_retcode = SQLConnect(g_hdbc, (SQLWCHAR*)L"gs_2015182030", SQL_NTS, (SQLWCHAR*)NULL, 0, NULL, 0);
+
+				// Allocate statement handle  
+				if (g_retcode == SQL_SUCCESS || g_retcode == SQL_SUCCESS_WITH_INFO)
+				{
+					cout << "DATABASE Connected" << endl;
+					g_retcode = SQLAllocHandle(SQL_HANDLE_STMT, g_hdbc, &g_hstmt);
+				}
+				else
+					db_show_error(g_hdbc, SQL_HANDLE_DBC, g_retcode);
+			}
+		}
+	}
+}
+
+void disconnect_DB()
+{
+	SQLFreeHandle(SQL_HANDLE_STMT, g_hstmt);
+	SQLDisconnect(g_hdbc);
+	SQLFreeHandle(SQL_HANDLE_DBC, g_hdbc);
+	SQLFreeHandle(SQL_HANDLE_ENV, g_henv);
+}
+
 void Init_obj()
 {
 	memset(&g_clients, 0, sizeof(g_clients));
@@ -60,6 +116,8 @@ void Init_obj()
 void Ready_Server()
 {
 	std::wcout.imbue(std::locale("korean"));
+
+	connect_DB();
 
 	/* 1. Winsock 초기화 */
 	WSADATA WSAData;

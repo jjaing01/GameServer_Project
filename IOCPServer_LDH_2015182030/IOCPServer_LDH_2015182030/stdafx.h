@@ -14,6 +14,7 @@
 #include <queue>
 #include <atomic>
 #include <vector>
+#include <sqlext.h>
 
 // Lua in C Environment
 extern "C"
@@ -32,6 +33,7 @@ using namespace chrono;
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
 #pragma comment(lib, "lua54.lib")
+#pragma comment(lib, "odbc32.lib")
 
 /* USER HEADER */
 #include "protocol.h"
