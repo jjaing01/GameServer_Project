@@ -15,6 +15,7 @@
 #include <atomic>
 #include <vector>
 #include <sqlext.h>
+#include <string>
 
 // Lua in C Environment
 extern "C"
@@ -46,3 +47,4 @@ using namespace chrono;
 #include "serverFunc.h"
 #include "PacketMgr.h"
 #include "npc.h"
+#include "my_DB.h"

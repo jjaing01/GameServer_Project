@@ -214,7 +214,7 @@ void ProcessPacket(char* ptr)
 			switch (obj_type)
 			{
 			case TYPE_PLAYER:
-				npcs[id] = OBJECT{ *pieces, 256, 0, 64, 64 };  // 나이트
+				npcs[id] = OBJECT{ *pieces, 256, 0, 64, 64 };  // 타 유저
 				break;
 			case TYPE_ORC:
 				npcs[id] = OBJECT{ *pieces, 320, 0, 64, 64 };  // 나이트
@@ -483,13 +483,17 @@ int main()
 		while (true);
 	}
 
+	cout << "ID 입력: ";
+
+
 	client_initialize();
 
 	cs_packet_login l_packet;
 	l_packet.size = sizeof(l_packet);
 	l_packet.type = CS_LOGIN;
-	int t_id = GetCurrentProcessId();
-	sprintf_s(l_packet.name, "P%03d", t_id % 1000);
+	cin >> l_packet.name;
+	//int t_id = GetCurrentProcessId();
+	//sprintf_s(l_packet.name, "%s", t_id % 1000);
 	strcpy_s(avatar.name, l_packet.name);
 	avatar.set_name(l_packet.name);
 	send_packet(&l_packet);

@@ -34,6 +34,9 @@
     <Filter Include="소스 파일\03.NPC">
       <UniqueIdentifier>{3abb0a86-4ad3-4492-8694-fe10bae9c9db}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\04.DB">
+      <UniqueIdentifier>{b4fd2a56-a546-4e7e-9075-3c4765ef5042}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h">
@@ -81,6 +84,9 @@
     <ClInclude Include="npc.h">
       <Filter>소스 파일\03.NPC</Filter>
     </ClInclude>
+    <ClInclude Include="my_DB.h">
+      <Filter>소스 파일\04.DB</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp">
@@ -94,6 +100,9 @@
     </ClCompile>
     <ClCompile Include="npc.cpp">
       <Filter>소스 파일\03.NPC</Filter>
+    </ClCompile>
+    <ClCompile Include="my_DB.cpp">
+      <Filter>소스 파일\04.DB</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

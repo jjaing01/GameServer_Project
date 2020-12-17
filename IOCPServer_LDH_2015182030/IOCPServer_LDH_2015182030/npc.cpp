@@ -4,6 +4,9 @@
 void initialize_NPC()
 {
 	cout << "Initialize NPC" << endl;
+
+	char npc_name[50];
+
 	for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
 	{
 		/* 위치값 초기화 */
@@ -19,6 +22,8 @@ void initialize_NPC()
 		g_clients[i].m_target_id = -1;			// NPC 공격 대상
 		g_clients[i].lev = (abs(g_clients[i].x - (WORLD_WIDTH / 2)) + abs(g_clients[i].y - (WORLD_WIDTH / 2))) / 100 + 1;	// 거리에 따른 레벨 조정 (맵 중심부- 저렙 구간)
 		g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 2;														
+		
+		//sprintf_s(npc_name, "N%d", i);
 
 		/* NPC TYPE: ORC */
 		if (i < MAX_USER + NUM_NPC / 2)
@@ -28,6 +33,8 @@ void initialize_NPC()
 			g_clients[i].hp = ORC_HP;
 			g_clients[i].maxhp = ORC_HP;
 			g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 4;
+
+			sprintf_s(npc_name, "ORC%d", i);
 		}
 		/* NPC TYPE: ELF */
 		else if (MAX_USER + NUM_NPC / 2 <= i && i < MAX_USER + NUM_NPC - 1)
@@ -37,6 +44,8 @@ void initialize_NPC()
 			g_clients[i].hp = ELF_HP;
 			g_clients[i].maxhp = ELF_HP;
 			g_clients[i].exp = (g_clients[i].lev * g_clients[i].lev) * 4;
+
+			sprintf_s(npc_name, "ELF%d", i);
 		}
 		/* NPC TYPE: NORMAL */
 		else if (MAX_USER + NUM_NPC - 1 <= i && i < MAX_USER + NUM_NPC)
@@ -71,10 +80,10 @@ void initialize_NPC()
 			lua_register(L, "API_get_x", API_get_x);
 			lua_register(L, "API_get_y", API_get_y);
 			lua_register(L, "API_IsBye", API_IsBye);
+
+			sprintf_s(npc_name, "M%d", i);
 		}
 
-		char npc_name[50];
-		sprintf_s(npc_name, "N%d", i);
 		strcpy_s(g_clients[i].name, npc_name);
 		g_clients[i].m_status = ST_STOP;
 	}

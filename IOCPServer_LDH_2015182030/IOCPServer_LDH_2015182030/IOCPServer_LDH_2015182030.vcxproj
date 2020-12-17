@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="iocp_main_server.cpp" />
+    <ClCompile Include="my_DB.cpp" />
     <ClCompile Include="npc.cpp" />
     <ClCompile Include="PacketMgr.cpp" />
     <ClCompile Include="serverFunc.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="include\lua.hpp" />
     <ClInclude Include="include\luaconf.h" />
     <ClInclude Include="include\lualib.h" />
+    <ClInclude Include="my_DB.h" />
     <ClInclude Include="npc.h" />
     <ClInclude Include="PacketMgr.h" />
     <ClInclude Include="protocol.h" />

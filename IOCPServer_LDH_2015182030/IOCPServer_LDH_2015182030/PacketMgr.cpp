@@ -382,6 +382,35 @@ void process_packet(int id)
 		strcpy_s(g_clients[id].name, p->name);
 		g_clients[id].c_lock.unlock();
 
+		/* CHECKING ID IN DATABASE SERVER */
+		if (!Check_ID(id))
+		{
+			string name{ "'" };
+			name += g_clients[id].name;
+			name += "'";
+			
+			/* ID가 유효하지 않을 경우 - 새로운 회원으로 추가 */
+			std::string str_order
+				= "EXEC insert_user " + name + ", "
+				+ to_string(g_clients[id].lev) + ", "
+				+ to_string(g_clients[id].x) + ", "
+				+ to_string(g_clients[id].y) + ", "
+				+ to_string(g_clients[id].hp) + ", "
+				+ to_string(g_clients[id].maxhp) + ", "
+				+ to_string(g_clients[id].exp) + ", "
+				+ to_string(g_clients[id].lev * LEVEL_UP_EXP) + ", "
+				+ to_string(g_clients[id].att) + ", "
+				+ to_string(g_clients[id].ori_x) + ", "
+				+ to_string(g_clients[id].ori_y);
+
+			std::wstring wstr_order = L"";
+			wstr_order.assign(str_order.begin(), str_order.end());
+			g_retcode = SQLExecDirect(g_hstmt, (SQLWCHAR*)wstr_order.c_str(), SQL_NTS);
+			cout << g_retcode << endl;
+			db_show_error(g_hstmt, SQL_HANDLE_STMT, g_retcode);
+			SQLCancel(g_hstmt);
+		}
+
 		send_login_ok(id);											// 서버가 '현재 유저'에게 login_ok_pakcet(로그인 수락 패킷)을 전송
 
 		for (int i = 0; i < MAX_USER; ++i)							// 전체 유저 순회 시작
