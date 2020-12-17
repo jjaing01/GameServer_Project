@@ -69,6 +69,7 @@ void Init_obj()
 void Ready_Server()
 {
 	std::wcout.imbue(std::locale("korean"));
+	srand(unsigned int(time(NULL)));
 
 	connect_DB();
 
@@ -205,6 +206,14 @@ void disconnect_client(int id)
 				}
 			}
 	}
+
+	/* USER Stat 갱신 */
+	if (!is_npc(id))
+		Update_stat_DB(id);
+
+	/* USER Stat 갱신 */
+	if (!is_npc(id))
+		Update_move_DB(id);
 
 	g_clients[id].c_lock.lock();
 	g_clients[id].in_use = false;

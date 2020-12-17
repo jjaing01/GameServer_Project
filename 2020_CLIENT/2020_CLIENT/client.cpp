@@ -145,7 +145,6 @@ public:
 		m_text.setOutlineThickness(5);
 		m_text.setOutlineColor(sf::Color::Black);
 		
-
 		cout << chat << endl;//
 		m_time_out = high_resolution_clock::now() + 3s;
 	}
@@ -564,7 +563,7 @@ int main()
 					if (chatting.size() != 0)
 					{
 						chatting.pop_back();
-						std::cout << chatting << std::endl;
+						//std::cout << chatting << std::endl;
 					}
 					g_bIsChat = false;
 				}
@@ -588,7 +587,7 @@ int main()
 				if (event.text.unicode < 128)
 				{
 					chatting.push_back((char)event.text.unicode);
-					std::cout << chatting << "   " << chatting.size() << std::endl;
+					//std::cout << chatting << "   " << chatting.size() << std::endl;
 				}	
 			}
 #endif // ADD

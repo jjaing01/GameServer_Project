@@ -22,7 +22,7 @@ inline void db_show_error(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode)
     WCHAR wszMessage[1000];
     WCHAR wszState[SQL_SQLSTATE_SIZE + 1];
     if (RetCode == SQL_INVALID_HANDLE) {
-        wcout << L"Invalid handle!\n";
+        //wcout << L"Invalid handle!\n";
         return;
     }
     while (SQLGetDiagRec(hType, hHandle, ++iRec, wszState, &iError, wszMessage,

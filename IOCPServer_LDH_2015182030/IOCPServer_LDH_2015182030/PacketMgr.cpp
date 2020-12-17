@@ -59,8 +59,8 @@ void send_move_packet(int to_client, int id)
 	p.move_time = g_clients[id].move_time;
 
 	/* USER Stat 갱신 */
-	if (!is_npc(id))
-		Update_move_DB(id);
+	/*if (!is_npc(id))
+		Update_move_DB(id);*/
 
 	send_packet(to_client, &p);
 }
@@ -106,8 +106,8 @@ void send_stat_change_packet(int to, int id)
 	p.hp = g_clients[id].hp;
 
 	/* USER Stat 갱신 */
-	if (!is_npc(id))
-		Update_stat_DB(id);
+	/*if (!is_npc(id))
+		Update_stat_DB(id);*/
 	
 	send_packet(to, &p);
 }
