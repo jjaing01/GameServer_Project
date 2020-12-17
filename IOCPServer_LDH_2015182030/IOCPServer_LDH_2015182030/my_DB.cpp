@@ -53,7 +53,7 @@ bool Check_ID(int id)
 	/* 유효한 ID인지 검사하는 쿼리문 */
 	std::string str_order
 		= "SELECT user_level, user_x, user_y, user_hp,user_maxhp, user_exp, user_maxexp, user_att, user_ori_x, user_ori_y FROM USER_DATA WHERE user_name = '";
-	//str_order += name;
+
 	str_order += g_clients[id].name;
 	str_order += "'";
 
@@ -74,8 +74,8 @@ bool Check_ID(int id)
 		g_retcode = SQLBindCol(g_hstmt, 6, SQL_C_LONG, &exp, 100, &cbExp);
 		g_retcode = SQLBindCol(g_hstmt, 7, SQL_C_LONG, &maxexp, 100, &cbMaxExp);
 		g_retcode = SQLBindCol(g_hstmt, 8, SQL_C_LONG, &att, 100, &cbAtt);
-		g_retcode = SQLBindCol(g_hstmt, 8, SQL_C_LONG, &ori_x, 100, &cbOriX);
-		g_retcode = SQLBindCol(g_hstmt, 8, SQL_C_LONG, &ori_y, 100, &cbOriY);
+		g_retcode = SQLBindCol(g_hstmt, 9, SQL_C_LONG, &ori_x, 100, &cbOriX);
+		g_retcode = SQLBindCol(g_hstmt, 10, SQL_C_LONG, &ori_y, 100, &cbOriY);
 
 		for (int i = 0; ; i++)
 		{
@@ -107,4 +107,81 @@ bool Check_ID(int id)
 	SQLCloseCursor(g_hstmt);
 
 	return false;
+}
+
+void Insert_NewPlayer_DB(int id)
+{
+	string name{ "'" };
+	name += g_clients[id].name;
+	name += "'";
+
+	/* ID가 유효하지 않을 경우 - 새로운 회원으로 추가 */
+	std::string str_order
+		= "EXEC insert_user " + name + ", "
+		+ to_string(g_clients[id].lev) + ", "
+		+ to_string(g_clients[id].x) + ", "
+		+ to_string(g_clients[id].y) + ", "
+		+ to_string(g_clients[id].hp) + ", "
+		+ to_string(g_clients[id].maxhp) + ", "
+		+ to_string(g_clients[id].exp) + ", "
+		+ to_string(g_clients[id].lev * LEVEL_UP_EXP) + ", "
+		+ to_string(g_clients[id].att) + ", "
+		+ to_string(g_clients[id].ori_x) + ", "
+		+ to_string(g_clients[id].ori_y);
+
+	std::wstring wstr_order = L"";
+	wstr_order.assign(str_order.begin(), str_order.end());
+	g_retcode = SQLExecDirect(g_hstmt, (SQLWCHAR*)wstr_order.c_str(), SQL_NTS);
+	
+	SQLCloseCursor(g_hstmt);
+	SQLCancel(g_hstmt);
+}
+
+void Update_stat_DB(int id)
+{
+	if (!g_clients[id].in_use)
+		return;
+
+	string name{ "'" };
+	name += g_clients[id].name;
+	name += "'";
+
+	/* 전투 후 스탯 갱신 */
+	std::string str_order
+		= "EXEC update_user_stat " 
+		+ to_string(g_clients[id].lev) + ", "
+		+ to_string(g_clients[id].exp) + ", "
+		+ to_string(g_clients[id].hp) + ", "
+		+ name;
+
+	std::wstring wstr_order = L"";
+	wstr_order.assign(str_order.begin(), str_order.end());
+	g_retcode = SQLExecDirect(g_hstmt, (SQLWCHAR*)wstr_order.c_str(), SQL_NTS);
+
+	SQLCloseCursor(g_hstmt);
+	SQLCancel(g_hstmt);
+}
+
+void Update_move_DB(int id)
+{
+	if (!g_clients[id].in_use)
+		return;
+
+	string name{ "'" };
+	name += g_clients[id].name;
+	name += "'";
+
+	/* 이동 후 위치 갱신 */
+	std::string str_order
+		= "EXEC update_user_position "
+		+ to_string(g_clients[id].x) + ", "
+		+ to_string(g_clients[id].y) + ", "
+		+ name;
+
+	std::wstring wstr_order = L"";
+	wstr_order.assign(str_order.begin(), str_order.end());
+	g_retcode = SQLExecDirect(g_hstmt, (SQLWCHAR*)wstr_order.c_str(), SQL_NTS);
+
+	SQLCloseCursor(g_hstmt);
+	SQLCancel(g_hstmt);
 }

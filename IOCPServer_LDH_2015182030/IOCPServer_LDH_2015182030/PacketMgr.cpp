@@ -23,10 +23,10 @@ void send_login_ok(int id)
 {
 	sc_packet_login_ok p;
 
-	p.exp = 0;
-	p.hp = 100;
+	p.exp = g_clients[id].exp;
+	p.hp = g_clients[id].hp;
 	p.id = id;
-	p.level = 1;
+	p.level = g_clients[id].lev;
 	p.size = sizeof(p);
 	p.type = SC_PACKET_LOGIN_OK;
 	p.x = g_clients[id].x;
@@ -57,6 +57,10 @@ void send_move_packet(int to_client, int id)
 	p.x = g_clients[id].x;
 	p.y = g_clients[id].y;
 	p.move_time = g_clients[id].move_time;
+
+	/* USER Stat 갱신 */
+	if (!is_npc(id))
+		Update_move_DB(id);
 
 	send_packet(to_client, &p);
 }
@@ -100,6 +104,10 @@ void send_stat_change_packet(int to, int id)
 	p.level = g_clients[id].lev;
 	p.exp = g_clients[id].exp;
 	p.hp = g_clients[id].hp;
+
+	/* USER Stat 갱신 */
+	if (!is_npc(id))
+		Update_stat_DB(id);
 	
 	send_packet(to, &p);
 }
@@ -384,31 +392,9 @@ void process_packet(int id)
 
 		/* CHECKING ID IN DATABASE SERVER */
 		if (!Check_ID(id))
-		{
-			string name{ "'" };
-			name += g_clients[id].name;
-			name += "'";
-			
+		{	
 			/* ID가 유효하지 않을 경우 - 새로운 회원으로 추가 */
-			std::string str_order
-				= "EXEC insert_user " + name + ", "
-				+ to_string(g_clients[id].lev) + ", "
-				+ to_string(g_clients[id].x) + ", "
-				+ to_string(g_clients[id].y) + ", "
-				+ to_string(g_clients[id].hp) + ", "
-				+ to_string(g_clients[id].maxhp) + ", "
-				+ to_string(g_clients[id].exp) + ", "
-				+ to_string(g_clients[id].lev * LEVEL_UP_EXP) + ", "
-				+ to_string(g_clients[id].att) + ", "
-				+ to_string(g_clients[id].ori_x) + ", "
-				+ to_string(g_clients[id].ori_y);
-
-			std::wstring wstr_order = L"";
-			wstr_order.assign(str_order.begin(), str_order.end());
-			g_retcode = SQLExecDirect(g_hstmt, (SQLWCHAR*)wstr_order.c_str(), SQL_NTS);
-			cout << g_retcode << endl;
-			db_show_error(g_hstmt, SQL_HANDLE_STMT, g_retcode);
-			SQLCancel(g_hstmt);
+			Insert_NewPlayer_DB(id);
 		}
 
 		send_login_ok(id);											// 서버가 '현재 유저'에게 login_ok_pakcet(로그인 수락 패킷)을 전송
@@ -435,7 +421,6 @@ void process_packet(int id)
 						send_enter_packet(id, i);
 					}
 				}
-
 #ifdef NPC
 		for (int j = MAX_USER; j < MAX_USER + NUM_NPC; ++j)
 		{

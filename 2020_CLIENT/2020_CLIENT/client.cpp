@@ -194,6 +194,9 @@ void ProcessPacket(char* ptr)
 		avatar.move(my_packet->x, my_packet->y);
 		g_left_x = my_packet->x - (SCREEN_WIDTH / 2);
 		g_top_y = my_packet->y - (SCREEN_HEIGHT / 2);
+		avatar.exp = my_packet->exp;
+		avatar.hp = my_packet->hp;
+		avatar.level = my_packet->level;
 		avatar.show();
 	}
 	break;
